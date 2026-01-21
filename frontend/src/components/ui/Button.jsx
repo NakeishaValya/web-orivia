@@ -1,0 +1,119 @@
+import React from 'react';
+import {
+  colors,
+  spacing,
+  radius,
+  fontSize,
+  transitions,
+  fontFamily,
+} from '../../styles/variables.jsx';
+
+const baseStyle = {
+  fontFamily: fontFamily.base,
+  color: '#ffffff',
+  cursor: 'pointer',
+  border: 'none',
+  outline: 'none',
+  transition: transitions.base,
+};
+
+/* ========================= */
+/* VARIANT STYLES */
+/* ========================= */
+
+const variants = {
+  primary: {
+    ...baseStyle,
+    display: 'flex',
+    width: '412px',
+    height: '49px',
+    padding: '10px 20px',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderRadius: '10px',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    background: `linear-gradient(
+      94deg,
+      ${colors.accent5} 28.08%,
+      ${colors.accent4} 97.67%
+    )`,
+    fontSize: fontSize.base,
+  },
+
+  btn1: {
+    ...baseStyle,
+    display: 'flex',
+    width: '132px',
+    padding: spacing.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '5px',
+    flexShrink: 0,
+    borderRadius: radius.md,
+    border: `1px solid ${colors.accent5}`,
+    background: colors.accent4,
+    boxShadow: `
+      0 0 1.4px 0 ${colors.accent5},
+      0 1px 8.6px 0 ${colors.accent5} inset
+    `,
+    fontSize: fontSize.sm,
+  },
+
+  btn2: {
+    ...baseStyle,
+    display: 'flex',
+    width: '132px',
+    padding: spacing.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '5px',
+    flexShrink: 0,
+    borderRadius: radius.md,
+    border: `1px solid ${colors.accent4}`,
+    background: colors.accent5,
+    boxShadow: `
+      0 0 1.4px 0 ${colors.accent4},
+      0 1px 8.6px 0 ${colors.accent4} inset
+    `,
+    fontSize: fontSize.sm,
+  },
+
+  btn3: {
+    ...baseStyle,
+    display: 'flex',
+    width: '132px',
+    padding: spacing.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '5px',
+    flexShrink: 0,
+    borderRadius: radius.md,
+    border: `1px solid ${colors.secondary}`,
+    background: colors.primary,
+    boxShadow: `
+      0 0 1.4px 0 ${colors.accent5},
+      0 1px 8.6px 0 ${colors.accent5} inset
+    `,
+    fontSize: fontSize.sm,
+  },
+};
+
+/* ========================= */
+/* COMPONENT */
+/* ========================= */
+
+const Button = ({ variant = 'primary', style = {}, children, ...props }) => {
+  return (
+    <button
+      style={{
+        ...variants[variant],
+        ...style,
+      }}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
+
+export default Button;
