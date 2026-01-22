@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { colors, spacing, radius, fontSize, lineHeight, fontFamily, shadows, transitions } from '../../styles/variables.jsx';
 import backgroundImage from '../../assets/images/authbg.jpg';
 import cardImage from '../../assets/images/authcard.jpg';
 import { Link } from 'react-router-dom';
+import Button from '../../components/ui/Button.jsx';
+import { AuthCard } from '../../components/ui/Card.jsx';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -15,6 +18,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleResize = () => {
@@ -39,7 +43,13 @@ const LoginPage = () => {
     setTimeout(() => {
       console.log('Login:', formData);
       setLoading(false);
-      alert('Login successful! (Demo)');
+      const role = (formData.email || '').toLowerCase().includes('agent') ? 'Agent' : 'Customer';
+      try {
+        localStorage.setItem('role', role);
+      } catch (err) {
+        console.warn('Failed saving role to localStorage', err);
+      }
+      navigate('/home');
     }, 1000);
   };
 
@@ -48,11 +58,6 @@ const LoginPage = () => {
     alert('Google authentication not yet configured');
   };
 
-
-
-
-
-  // Styles using variables.jsx
   const styles = {
     container: {
       position: 'relative',
@@ -72,70 +77,15 @@ const LoginPage = () => {
       width: '100%',
       height: '100%',
       background: `linear-gradient(100deg, ${colors.text}66, ${colors.textLight}33), url(${backgroundImage}`,
-      backgroundSize: 'cover',      // ⬅️ ini kuncinya
-      backgroundPosition: 'center', // ⬅️ biar fokus di tengah
-      backgroundRepeat: 'no-repeat',// ⬅️ cegah pengulangan
+      backgroundSize: 'cover',    
+      backgroundPosition: 'center', 
+      backgroundRepeat: 'no-repeat',
       zIndex: -1,
     },
     wrapper: {
       width: '100%',
       maxWidth: '900px',
       margin: '0 auto',
-    },
-    card: {
-      position: 'relative',
-      display: 'flex',
-      flexDirection: isMobile ? 'column' : 'row',
-      background: colors.bg,
-      borderRadius: radius.xl,
-      overflow: 'hidden',
-      boxShadow: shadows.xl,
-      border: `10px solid ${colors.bg}`,
-      minHeight: isMobile ? 'auto' : '750px',
-    },
-    imageWrapper: {
-      position: isMobile ? 'relative' : 'absolute',
-      top: 0,
-      left: '55%',
-      width: isMobile ? '100%' : '45%',
-      height: isMobile ? '150px' : '100%',
-      zIndex: 10,
-      transition: 'left 0.6s cubic-bezier(0.68, -0.15, 0.32, 1.15)',
-    },
-    imageSection: {
-      width: '100%',
-      height: '100%',
-      background: `linear-gradient(100deg, ${colors.text}66, ${colors.textLight}33), url(${cardImage}`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      borderRadius: isMobile ? 0 : radius.lg,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexDirection: 'column',
-      gap: spacing.sm,
-      padding: spacing.xl,
-      boxSizing: 'border-box',
-    },
-    imageTextWrapper: {
-      // No animation
-    },
-    imageText: {
-      color: colors.bg,
-      fontSize: isMobile ? fontSize.lg : fontSize['2xl'],
-      fontWeight: 700,
-      fontFamily: fontFamily.base,
-      textAlign: 'center',
-      textShadow: '0 2px 10px rgba(0,0,0,0.3)',
-      margin: 0,
-    },
-    imageSubtext: {
-      color: 'rgba(255,255,255,0.9)',
-      fontSize: fontSize.sm,
-      fontFamily: fontFamily.base,
-      textAlign: 'center',
-      margin: 0,
-      marginTop: spacing.sm,
     },
     contentWrapper: {
       display: 'flex',
@@ -343,32 +293,14 @@ const LoginPage = () => {
         {error && <div style={styles.error}>{error}</div>}
 
         <div>
-          <button
+          <Button
             type="submit"
-            style={{
-              ...styles.button,
-              ...styles.buttonPrimary,
-              opacity: loading ? 0.7 : 1,
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
+            variant="authPrimary"
+            style={{ marginTop: styles.button.marginTop, opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
             disabled={loading}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.target.style.backgroundColor = colors.accent4;
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = shadows.lg;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) {
-                e.target.style.backgroundColor = colors.accent5;
-                e.target.style.transform = '';
-                e.target.style.boxShadow = '';
-              }
-            }}
           >
             {loading ? 'Logging in...' : 'Login'}
-          </button>
+          </Button>
         </div>
       </form>
 
@@ -379,28 +311,15 @@ const LoginPage = () => {
       </div>
 
       <div>
-        <button
+        <Button
           type="button"
-          style={{
-            ...styles.button,
-            ...styles.buttonGoogle,
-            // No marginTop here
-          }}
+          variant="authGoogle"
           onClick={handleGoogleAuth}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = colors.primary;
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = shadows.lg;
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = colors.secondary;
-            e.target.style.transform = '';
-            e.target.style.boxShadow = '';
-          }}
+          disabled={loading}
         >
           <span style={{ fontWeight: 700, fontSize: fontSize.lg }}>G</span>
           Login with Google
-        </button>
+        </Button>
       </div>
 
       <div style={styles.footer}>
@@ -415,18 +334,11 @@ const LoginPage = () => {
     <div style={styles.container}>
       <div style={styles.background}></div>
       <div style={styles.wrapper}>
-        <div style={styles.card}>
-          {/* Sliding Image */}
-          <div style={styles.imageWrapper}>
-            <div style={styles.imageSection}>
-              <div style={styles.imageTextWrapper}></div>
-            </div>
-          </div>
-          {/* Forms Container */}
+        <AuthCard image={cardImage} isMobile={isMobile} imageWrapperStyle={{ left: isMobile ? 0 : '55%' }}>
           <div style={styles.contentWrapper}>
             {renderForm()}
           </div>
-        </div>
+        </AuthCard>
       </div>
     </div>
   );

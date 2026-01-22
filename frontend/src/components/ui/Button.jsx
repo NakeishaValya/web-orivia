@@ -21,7 +21,48 @@ const baseStyle = {
 /* VARIANT STYLES */
 /* ========================= */
 
+// VARIANTS: include auth-specific buttons for login/register
 const variants = {
+  authPrimary: {
+    ...baseStyle,
+    padding: `${spacing.sm} ${spacing.lg}`,
+    border: 'none',
+    borderRadius: radius.md,
+    fontSize: fontSize.base,
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: `all ${transitions.base}`,
+    fontFamily: fontFamily.base,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    width: '100%',
+    boxSizing: 'border-box',
+    backgroundColor: colors.accent5,
+    color: colors.bg,
+  },
+  
+  authGoogle: {
+    ...baseStyle,
+    padding: `${spacing.sm} ${spacing.lg}`,
+    border: 'none',
+    borderRadius: radius.md,
+    fontSize: fontSize.base,
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: `all ${transitions.base}`,
+    fontFamily: fontFamily.base,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    width: '100%',
+    boxSizing: 'border-box',
+    backgroundColor: colors.secondary,
+    color: colors.bg,
+  },
+
   primary: {
     ...baseStyle,
     display: 'flex',

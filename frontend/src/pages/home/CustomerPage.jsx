@@ -1,16 +1,16 @@
 import React from 'react';
 import Navbar from '../../components/ui/Navbar.jsx';
 
-const HomePage = () => {
+const CustomerPage = () => {
   return (
     <div>
       <Navbar variant="main" />
       <main style={{ padding: 32 }}>
-        <h1>Home</h1>
-        <p>Dummy home page — you reached it after login.</p>
+        <h1>Customer Dashboard</h1>
+        <p>Dummy Customer page — linked from Explore button.</p>
       </main>
     </div>
   );
 };
 
-export default HomePage;
+export default CustomerPage;

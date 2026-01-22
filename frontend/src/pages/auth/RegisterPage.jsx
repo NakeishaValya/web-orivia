@@ -5,10 +5,10 @@ import { colors, spacing, radius, fontSize, lineHeight, fontFamily, shadows, tra
 import backgroundImage from '../../assets/images/authbg.jpg';
 import cardImage from '../../assets/images/authcard.jpg';
 import { Link } from 'react-router-dom';
+import Button from '../../components/ui/Button.jsx';
+import { AuthCard } from '../../components/ui/Card.jsx';
 
 const RegisterPage = () => {
-  // Removed isRegister and related logic
-  // ...existing code...
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -58,12 +58,6 @@ const RegisterPage = () => {
     alert('Google authentication not yet configured');
   };
 
-  // Removed toggleForm and isRegister logic
-
-  // Animation helper for form elements
-  // ...existing code...
-
-  // Styles using variables.jsx
   const styles = {
     container: {
       position: 'relative',
@@ -93,61 +87,6 @@ const RegisterPage = () => {
       maxWidth: '900px',
       margin: '0 auto',
     },
-    card: {
-      position: 'relative',
-      display: 'flex',
-      flexDirection: isMobile ? 'column' : 'row',
-      background: colors.bg,
-      borderRadius: radius.xl,
-      overflow: 'hidden',
-      boxShadow: shadows.xl,
-      border: `10px solid ${colors.bg}`,
-      minHeight: isMobile ? 'auto' : '750px',
-    },
-    imageWrapper: {
-      position: isMobile ? 'relative' : 'absolute',
-      top: 0,
-      left: '0',
-      width: isMobile ? '100%' : '45%',
-      height: isMobile ? '150px' : '100%',
-      zIndex: 10,
-      transition: 'left 0.6s cubic-bezier(0.68, -0.15, 0.32, 1.15)',
-    },
-    imageSection: {
-      width: '100%',
-      height: '100%',
-      background: `linear-gradient(100deg, ${colors.text}66, ${colors.textLight}33), url(${cardImage}`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      borderRadius: isMobile ? 0 : radius.lg,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexDirection: 'column',
-      gap: spacing.sm,
-      padding: spacing.xl,
-      boxSizing: 'border-box',
-    },
-    imageTextWrapper: {
-      // No animation
-    },
-    imageText: {
-      color: colors.bg,
-      fontSize: isMobile ? fontSize.lg : fontSize['2xl'],
-      fontWeight: 700,
-      fontFamily: fontFamily.base,
-      textAlign: 'center',
-      textShadow: '0 2px 10px rgba(0,0,0,0.3)',
-      margin: 0,
-    },
-    imageSubtext: {
-      color: 'rgba(255,255,255,0.9)',
-      fontSize: fontSize.sm,
-      fontFamily: fontFamily.base,
-      textAlign: 'center',
-      margin: 0,
-      marginTop: spacing.sm,
-    },
     contentWrapper: {
       display: 'flex',
       width: isMobile ? '100%' : '100%',
@@ -169,7 +108,7 @@ const RegisterPage = () => {
       boxSizing: 'border-box',
       minHeight: isMobile ? 'auto' : '750px',
       transition: 'opacity 0.4s ease, visibility 0.4s ease',
-      zIndex: 20, // ✅ WAJIB
+      zIndex: 20, 
       paddingTop: spacing.xl, 
     },
     contentLogin: {
@@ -441,33 +380,14 @@ const RegisterPage = () => {
         {error && <div style={styles.error}>{error}</div>}
 
         <div>
-          <button
+          <Button
             type="submit"
-            style={{
-              ...styles.button,
-              ...styles.buttonPrimary,
-              ...styles.buttonWithMargin,
-              opacity: loading ? 0.7 : 1,
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
+            variant="authPrimary"
+            style={{ marginTop: styles.buttonWithMargin.marginTop, opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
             disabled={loading}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.target.style.backgroundColor = colors.accent4;
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = shadows.lg;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) {
-                e.target.style.backgroundColor = colors.accent5;
-                e.target.style.transform = '';
-                e.target.style.boxShadow = '';
-              }
-            }}
           >
             {loading ? 'Creating account...' : 'Sign Up'}
-          </button>
+          </Button>
         </div>
       </form>
 
@@ -478,28 +398,15 @@ const RegisterPage = () => {
       </div>
 
       <div>
-        <button
+        <Button
           type="button"
-          style={{
-            ...styles.button,
-            ...styles.buttonGoogle,
-          }}
+          variant="authGoogle"
           onClick={handleGoogleAuth}
           disabled={loading}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = colors.primary;
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = shadows.lg;
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = colors.secondary;
-            e.target.style.transform = '';
-            e.target.style.boxShadow = '';
-          }}
         >
           <span style={{ fontWeight: 700, fontSize: fontSize.lg }}>G</span>
           Sign up with Google
-        </button>
+        </Button>
       </div>
 
       <div style={styles.footer}>
@@ -514,18 +421,11 @@ const RegisterPage = () => {
     <div style={styles.container}>
       <div style={styles.background}></div>
       <div style={styles.wrapper}>
-        <div style={styles.card}>
-          {/* Sliding Image */}
-          <div style={styles.imageWrapper}>
-            <div style={styles.imageSection}>
-              <div style={styles.imageTextWrapper}></div>
-            </div>
-          </div>
-          {/* Forms Container */}
+        <AuthCard image={cardImage} isMobile={isMobile} imageWrapperStyle={{ left: isMobile ? 0 : '0' }}>
           <div style={isMobile ? { padding: spacing.lg } : styles.contentWrapper}>
             {renderForm()}
           </div>
-        </div>
+        </AuthCard>
       </div>
     </div>
   );

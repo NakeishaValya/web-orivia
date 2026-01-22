@@ -1,4 +1,3 @@
-// Design Tokens/Variables
 export const colors = {
   primary: '#AB2A02',
   secondary: '#D3844F',
