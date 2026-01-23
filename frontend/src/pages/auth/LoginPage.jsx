@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useGoogleLogin } from '@react-oauth/google';
+import axios from 'axios';
 import { colors, spacing, radius, fontSize, lineHeight, fontFamily, shadows, transitions } from '../../styles/variables.jsx';
 import backgroundImage from '../../assets/images/authbg.jpg';
 import cardImage from '../../assets/images/authcard.jpg';
@@ -45,10 +47,54 @@ const LoginPage = () => {
     }, 1000);
   };
 
-  const handleGoogleAuth = () => {
-    console.log('Google auth clicked');
-    alert('Google authentication not yet configured');
-  };
+  const handleGoogleAuth = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      console.log('Google auth success:', tokenResponse);
+      setLoading(true);
+      
+      try {
+        // Get user info from Google
+        const userInfoResponse = await axios.get(
+          'https://www.googleapis.com/oauth2/v3/userinfo',
+          {
+            headers: {
+              Authorization: `Bearer ${tokenResponse.access_token}`,
+            },
+          }
+        );
+
+        const userInfo = userInfoResponse.data;
+        console.log('User info:', userInfo);
+
+        // Send to your backend for authentication
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        const backendResponse = await axios.post(`${apiUrl}/auth/google`, {
+          access_token: tokenResponse.access_token,
+          email: userInfo.email,
+          name: userInfo.name,
+          picture: userInfo.picture,
+        });
+
+        const { token, role, user } = backendResponse.data;
+        
+        // Store authentication data
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('role', role || 'Customer');
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        setLoading(false);
+        navigate('/home');
+      } catch (error) {
+        console.error('Google auth error:', error);
+        setError(error.response?.data?.message || 'Google authentication failed. Please try again.');
+        setLoading(false);
+      }
+    },
+    onError: (error) => {
+      console.error('Google login error:', error);
+      setError('Google authentication failed. Please try again.');
+    },
+  });
 
   const styles = {
     container: {
