@@ -20,8 +20,6 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // mobile detection removed; styles are desktop-focused
-
   const handleChange = (e) => {
     const { name, value } = e.currentTarget;
     setFormData((prev) => ({
@@ -31,20 +29,30 @@ const LoginPage = () => {
     setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      console.log('Login:', formData);
+    setError('');
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await axios.post(`${apiUrl}/auth/login`, {
+        email: formData.email,
+        password: formData.password,
+      });
+
+      const { token, role, user } = response.data;
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('role', role || 'Customer');
+      localStorage.setItem('user', JSON.stringify(user));
+
       setLoading(false);
-      const role = (formData.email || '').toLowerCase().includes('agent') ? 'Agent' : 'Customer';
-      try {
-        localStorage.setItem('role', role);
-      } catch (err) {
-        console.warn('Failed saving role to localStorage', err);
-      }
       navigate('/home');
-    }, 1000);
+    } catch (error) {
+      console.error('Login error:', error);
+      setError(error.response?.data?.message || 'Invalid email or password. Please try again.');
+      setLoading(false);
+    }
   };
 
   const handleGoogleAuth = useGoogleLogin({
@@ -53,7 +61,6 @@ const LoginPage = () => {
       setLoading(true);
       
       try {
-        // Get user info from Google
         const userInfoResponse = await axios.get(
           'https://www.googleapis.com/oauth2/v3/userinfo',
           {
@@ -66,7 +73,6 @@ const LoginPage = () => {
         const userInfo = userInfoResponse.data;
         console.log('User info:', userInfo);
 
-        // Send to your backend for authentication
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
         const backendResponse = await axios.post(`${apiUrl}/auth/google`, {
           access_token: tokenResponse.access_token,
@@ -77,7 +83,6 @@ const LoginPage = () => {
 
         const { token, role, user } = backendResponse.data;
         
-        // Store authentication data
         localStorage.setItem('authToken', token);
         localStorage.setItem('role', role || 'Customer');
         localStorage.setItem('user', JSON.stringify(user));
