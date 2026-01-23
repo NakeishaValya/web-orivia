@@ -17,10 +17,8 @@ const LoginPage = () => {
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const navigate = useNavigate();
-
-  // mobile detection removed; styles are desktop-focused
 
   const handleChange = (e) => {
     const { name, value } = e.currentTarget;
@@ -28,23 +26,49 @@ const LoginPage = () => {
       ...prev,
       [name]: value,
     }));
-    setError('');
+    // Clear error for this specific field
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      console.log('Login:', formData);
+    setFieldErrors({});
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await axios.post(`${apiUrl}/auth/login`, {
+        email: formData.email,
+        password: formData.password,
+      });
+
+      const { token, role, user } = response.data;
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('role', role || 'Customer');
+      localStorage.setItem('user', JSON.stringify(user));
+
       setLoading(false);
-      const role = (formData.email || '').toLowerCase().includes('agent') ? 'Agent' : 'Customer';
-      try {
-        localStorage.setItem('role', role);
-      } catch (err) {
-        console.warn('Failed saving role to localStorage', err);
-      }
       navigate('/home');
-    }, 1000);
+    } catch (error) {
+      console.error('Login error:', error);
+      const errorMsg = (error.response?.data?.message || 'Invalid email or password. Please try again.').toString();
+      const lower = errorMsg.toLowerCase();
+      // If backend message clearly references a field, show it inline; otherwise use alert
+      if (lower.includes('email')) {
+        setFieldErrors({ email: errorMsg });
+      } else if (lower.includes('password')) {
+        setFieldErrors({ password: errorMsg });
+      } else {
+        window.alert(errorMsg);
+      }
+      setLoading(false);
+    }
   };
 
   const handleGoogleAuth = useGoogleLogin({
@@ -53,7 +77,6 @@ const LoginPage = () => {
       setLoading(true);
       
       try {
-        // Get user info from Google
         const userInfoResponse = await axios.get(
           'https://www.googleapis.com/oauth2/v3/userinfo',
           {
@@ -66,7 +89,6 @@ const LoginPage = () => {
         const userInfo = userInfoResponse.data;
         console.log('User info:', userInfo);
 
-        // Send to your backend for authentication
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
         const backendResponse = await axios.post(`${apiUrl}/auth/google`, {
           access_token: tokenResponse.access_token,
@@ -77,7 +99,6 @@ const LoginPage = () => {
 
         const { token, role, user } = backendResponse.data;
         
-        // Store authentication data
         localStorage.setItem('authToken', token);
         localStorage.setItem('role', role || 'Customer');
         localStorage.setItem('user', JSON.stringify(user));
@@ -86,13 +107,13 @@ const LoginPage = () => {
         navigate('/home');
       } catch (error) {
         console.error('Google auth error:', error);
-        setError(error.response?.data?.message || 'Google authentication failed. Please try again.');
+        window.alert(error.response?.data?.message || 'Google authentication failed. Please try again.');
         setLoading(false);
       }
     },
     onError: (error) => {
       console.error('Google login error:', error);
-      setError('Google authentication failed. Please try again.');
+      window.alert('Google authentication failed. Please try again.');
     },
   });
 
@@ -181,6 +202,15 @@ const LoginPage = () => {
       fontWeight: 600,
       color: colors.accent5,
       fontFamily: fontFamily.base,
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    errorText: {
+      fontSize: fontSize.xs,
+      fontWeight: 400,
+      color: '#ef4444',
+      fontStyle: 'italic',
     },
     input: {
       padding: `${spacing.sm} ${spacing.md}`,
@@ -195,13 +225,9 @@ const LoginPage = () => {
       width: '100%',
       boxSizing: 'border-box',
     },
-    error: {
-      backgroundColor: 'rgba(239, 68, 68, 0.1)',
-      color: colors.error,
-      padding: `${spacing.sm} ${spacing.md}`,
-      borderRadius: radius.md,
-      fontSize: fontSize.sm,
-      fontFamily: fontFamily.base,
+    inputError: {
+      borderColor: '#ef4444',
+      backgroundColor: '#fef2f2',
     },
     button: {
       padding: `${spacing.sm} ${spacing.lg}`,
@@ -281,10 +307,11 @@ const LoginPage = () => {
       <form style={styles.form} onSubmit={handleSubmit}>
         <div style={styles.formGroup}>
           <label style={styles.label} htmlFor="email-log">
-            Email
+            <span>Email</span>
+            {fieldErrors.email && <span style={styles.errorText}>{fieldErrors.email}</span>}
           </label>
           <input
-            style={styles.input}
+            style={fieldErrors.email ? {...styles.input, ...styles.inputError} : styles.input}
             type="email"
             id="email-log"
             name="email"
@@ -296,7 +323,7 @@ const LoginPage = () => {
               e.target.style.boxShadow = shadows.md;
             }}
             onBlur={(e) => {
-              e.target.style.borderColor = colors.textLight;
+              e.target.style.borderColor = fieldErrors.email ? '#ef4444' : colors.textLight;
               e.target.style.boxShadow = 'none';
             }}
             required
@@ -305,10 +332,11 @@ const LoginPage = () => {
 
         <div style={styles.formGroup}>
           <label style={styles.label} htmlFor="password-log">
-            Password
+            <span>Password</span>
+            {fieldErrors.password && <span style={styles.errorText}>{fieldErrors.password}</span>}
           </label>
           <input
-            style={styles.input}
+            style={fieldErrors.password ? {...styles.input, ...styles.inputError} : styles.input}
             type="password"
             id="password-log"
             name="password"
@@ -320,14 +348,12 @@ const LoginPage = () => {
               e.target.style.boxShadow = shadows.md;
             }}
             onBlur={(e) => {
-              e.target.style.borderColor = colors.textLight;
+              e.target.style.borderColor = fieldErrors.password ? '#ef4444' : colors.textLight;
               e.target.style.boxShadow = 'none';
             }}
             required
           />
         </div>
-
-        {error && <div style={styles.error}>{error}</div>}
 
         <div>
           <Button
