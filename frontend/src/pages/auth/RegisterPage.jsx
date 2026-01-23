@@ -1,5 +1,3 @@
-console.log("INI REGISTER PAGE YANG DIEDIT!!!");
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -35,18 +33,39 @@ const RegisterPage = () => {
     setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
+
     setLoading(true);
-    setTimeout(() => {
-      console.log('Register:', formData);
+    setError('');
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await axios.post(`${apiUrl}/auth/register`, {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+      });
+
+      const { token, role, user } = response.data;
+
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('role', role || formData.role);
+      localStorage.setItem('user', JSON.stringify(user));
+
       setLoading(false);
-      alert('Registration successful! (Demo)');
-    }, 1000);
+      navigate('/home');
+    } catch (error) {
+      console.error('Registration error:', error);
+      setError(error.response?.data?.message || 'Registration failed. Please try again.');
+      setLoading(false);
+    }
   };
 
   const handleGoogleAuth = useGoogleLogin({
@@ -68,7 +87,6 @@ const RegisterPage = () => {
         const userInfo = userInfoResponse.data;
         console.log('User info:', userInfo);
 
-        // Send to your backend for authentication
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
         const backendResponse = await axios.post(`${apiUrl}/auth/google`, {
           access_token: tokenResponse.access_token,
@@ -79,7 +97,6 @@ const RegisterPage = () => {
 
         const { token, role, user } = backendResponse.data;
         
-        // Store authentication data
         localStorage.setItem('authToken', token);
         localStorage.setItem('role', role || 'Customer');
         localStorage.setItem('user', JSON.stringify(user));
