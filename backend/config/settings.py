@@ -13,9 +13,32 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 from decouple import config, Csv
 from datetime import timedelta
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Determine if running tests
+TESTING = 'pytest' in sys.modules or 'test' in sys.argv
+
+# Configure logs directory based on environment
+if TESTING:
+    # Use temp directory for tests
+    import tempfile
+    LOGS_DIR = Path(tempfile.gettempdir()) / 'orivia_test_logs'
+else:
+    # Use standard logs directory
+    LOGS_DIR = BASE_DIR / 'logs'
+
+# Create logs directory if it doesn't exist
+try:
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    LOGGING_ENABLED = True
+except (PermissionError, OSError) as e:
+    # Fall back to console-only logging
+    print(f"Warning: Could not create logs directory at {LOGS_DIR}: {e}")
+    print("Falling back to console-only logging")
+    LOGGING_ENABLED = False
 
 
 # Quick-start development settings - unsuitable for production
@@ -221,7 +244,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
+            'format': '{levelname} {asctime} {name} {funcName} {message}',
             'style': '{',
         },
         'simple': {
@@ -230,14 +253,6 @@ LOGGING = {
         },
     },
     'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs' / 'auth.log',
-            'maxBytes': 1024 * 1024 * 5,  # 5 MB
-            'backupCount': 5,
-            'formatter': 'verbose',
-        },
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
@@ -246,14 +261,27 @@ LOGGING = {
     },
     'loggers': {
         'users': {
-            'handlers': ['file', 'console'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
         'django.security': {
-            'handlers': ['file', 'console'],
+            'handlers': ['console'],
             'level': 'WARNING',
             'propagate': False,
         },
     },
 }
+
+# Add file handler only if logging to file is enabled
+if LOGGING_ENABLED:
+    LOGGING['handlers']['file'] = {
+        'level': 'INFO',
+        'class': 'logging.handlers.RotatingFileHandler',
+        'filename': LOGS_DIR / 'auth.log',
+        'maxBytes': 1024 * 1024 * 5,  # 5 MB
+        'backupCount': 5,
+        'formatter': 'verbose',
+    }
+    LOGGING['loggers']['users']['handlers'].append('file')
+    LOGGING['loggers']['django.security']['handlers'].append('file')

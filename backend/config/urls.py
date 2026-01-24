@@ -33,5 +33,5 @@ urlpatterns = [
     path('api/auth/google/', GoogleLogin.as_view(), name='google_login'),
     
     # Other dj-rest-auth endpoints
-    path('api/auth/', include('dj_rest_auth.urls')),
+    path('api/auth/core/', include('dj_rest_auth.urls')),
 ]
