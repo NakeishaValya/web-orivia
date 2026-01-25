@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
-from users.views import GoogleLogin
+from users.views import GoogleAuth, GoogleRegisterComplete
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -24,5 +24,6 @@ urlpatterns = [
     # Authentication Endpoints
     path('api/auth/', include('dj_rest_auth.urls')), # Login, Logout, User details
     path('api/auth/registration/', include('dj_rest_auth.registration.urls')), # Registration
-    path('api/auth/google/', GoogleLogin.as_view(), name='google_login'), # Google Auth
+    path('api/auth/google/', GoogleAuth.as_view(), name='google_auth'), # Google Auth Step 1
+    path('api/auth/google/complete/', GoogleRegisterComplete.as_view(), name='google_complete'), # Google Auth Step 2 (bc ada choose role)
 ]
