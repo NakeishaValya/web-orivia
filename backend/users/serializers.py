@@ -21,6 +21,14 @@ class CustomRegisterSerializer(RegisterSerializer):
     full_name = serializers.CharField(required=True)
     role = serializers.ChoiceField(choices=UserRole.choices, default=UserRole.CUSTOMER)
     
+    def validate_email(self, email):
+        from allauth.socialaccount.models import SocialAccount
+        if User.objects.filter(email=email).exists():
+            user = User.objects.get(email=email)
+            if SocialAccount.objects.filter(user=user, provider='google').exists():
+                raise serializers.ValidationError('This email is registered with Google. Please use Google Sign In.')
+        return email
+    
     def get_cleaned_data(self):
         return {
             'email': self.validated_data.get('email', ''),
@@ -29,9 +37,15 @@ class CustomRegisterSerializer(RegisterSerializer):
             'role': self.validated_data.get('role', UserRole.CUSTOMER),
         }
     
-    def save(self, request):
-        user = super().save(request)
+    def custom_signup(self, request, user):
         user.role = self.validated_data.get('role', UserRole.CUSTOMER)
         user.first_name = self.validated_data.get('full_name', '')
+        email = self.validated_data.get('email', '')
+        username_base = email.split('@')[0] if email else 'user'
+        username = username_base
+        counter = 1
+        while User.objects.filter(username=username).exclude(pk=user.pk).exists():
+            username = f"{username_base}{counter}"
+            counter += 1
+        user.username = username
         user.save()
-        return user
