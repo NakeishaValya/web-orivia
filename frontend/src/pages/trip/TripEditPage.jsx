@@ -491,691 +491,670 @@ export default function TripEditPage() {
     );
   }
 
-  return (
-    <>
-      <Navbar style={{ background: 'transparent' }} />
-      <div style={pageStyle}>
-        <div style={containerStyle}>
-          <TripTabs />
-          
-          <div style={gridStyle}>
-            {/* LEFT COLUMN */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
-              {/* Image Upload Card */}
-              <ImageUploadCard>
-                <FontAwesomeIcon icon={faUpload} size="3x" color={colors.accent4} />
-                <UploadButton onClick={handleUploadClick} disabled={filledCount >= MAX_IMAGES}>Upload Image</UploadButton>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept="image/png, image/jpeg"
-                  multiple
-                  style={{ display: 'none' }}
-                />
-              </ImageUploadCard>
-
-              {/* Image Preview Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: spacing.sm }}>
-                {imagePreviews.map((img, idx) => (
-                  <ImagePreview key={idx}>
-                    {img ? (
-                      <div style={{ position: 'relative' }}>
-                        <img 
-                          src={img} 
-                          alt={`preview-${idx}`} 
-                          style={{ 
-                            width: 100, 
-                            height: 100, 
-                            objectFit: 'cover', 
-                            borderRadius: radius.sm
-                          }} 
-                        />
-                        {filledCount >= 0 && (
-                          <button
-                            onClick={() => handleDeleteImage(idx)}
-                            style={{
-                              position: 'absolute',
-                              top: 8,
-                              right: 8,
-                              background: 'transparent',
-                              border: 'none',
-                              borderRadius: '100%',
-                              padding: 6,
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <FontAwesomeIcon icon={faTrash} color={colors.error} />
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <div style={{ width: '100%', height: 100, borderRadius: radius.sm }} />
-                    )}
-                  </ImagePreview>
-                ))}
-              </div>
-
-              {/* Description Section */}
-              <TripCard>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
-                  <CardHeader style={{ margin: 0 }}>Description</CardHeader>
-                  <IconButton icon={<FontAwesomeIcon icon={faPencil} />} onClick={() => openFieldModal('description', tripDescription)} />
-                </div>
-                <p style={{ 
-                  fontSize: fontSize.sm, 
-                  color: colors.text, 
-                  lineHeight: 1.6,
-                  margin: 0
-                }}>
-                  {tripDescription}
-                </p>
-              </TripCard>
-
-              {/* Schedule Section */}
-              <TripCard>
-                <CardHeader>Schedule</CardHeader>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
-                  {schedules.map((schedule) => (
-                    <div
-                      key={schedule.id}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '8px 0',
-                      }}
-                    >
-                      <span style={{ fontSize: fontSize.base }}>{formatDateRange(schedule.text)}</span>
-                      <div style={{ display: 'flex', gap: spacing.xs }}>
-                        <IconButton icon={<FontAwesomeIcon icon={faPencil} />} onClick={() => handleEditSchedule(schedule)} />
-                        <IconButton icon={<FontAwesomeIcon icon={faTrash} />} onClick={() => handleDeleteSchedule(schedule.id)} />
-                      </div>
+  return (<>
+    <div style={pageStyle}>
+      <Navbar />
+      <div style={containerStyle}>
+        <TripTabs />
+        
+        <div style={gridStyle}>
+          {/* LEFT COLUMN */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
+            {/* Image Upload Card */}
+            <ImageUploadCard>
+              <FontAwesomeIcon icon={faUpload} size="3x" color={colors.accent4} />
+              <UploadButton onClick={handleUploadClick} disabled={filledCount >= MAX_IMAGES}>Upload Image</UploadButton>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/png, image/jpeg"
+                multiple
+                style={{ display: 'none' }}
+              />
+            </ImageUploadCard>
+            {/* Image Preview Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: spacing.sm }}>
+              {imagePreviews.map((img, idx) => (
+                <ImagePreview key={idx}>
+                  {img ? (
+                    <div style={{ position: 'relative' }}>
+                      <img 
+                        src={img} 
+                        alt={`preview-${idx}`} 
+                        style={{ 
+                          width: 100, 
+                          height: 100, 
+                          objectFit: 'cover', 
+                          borderRadius: radius.sm
+                        }} 
+                      />
+                      {filledCount >= 0 && (
+                        <button
+                          onClick={() => handleDeleteImage(idx)}
+                          style={{
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                            background: 'transparent',
+                            border: 'none',
+                            borderRadius: '100%',
+                            padding: 6,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faTrash} color={colors.error} />
+                        </button>
+                      )}
                     </div>
-                  ))}
-                </div>
-
-                <div style={{ marginTop: spacing.md }}>
-                  <div style={{ display: 'flex', gap: spacing.sm, alignItems: 'end' }}>
-                    <div style={{ flex: 1 }}>
-                      <InputField label="Start Date" type="date" value={newScheduleStartDate} onChange={(e) => { setNewScheduleStartDate(e.target.value); setScheduleError(''); }} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <InputField label="End Date" type="date" value={newScheduleEndDate} onChange={(e) => { setNewScheduleEndDate(e.target.value); setScheduleError(''); }} />
-                    </div>
-                    <AddButton onClick={handleAddSchedule} />
-                  </div>
-                  {scheduleError && (
-                    <div style={{ color: colors.error, marginTop: spacing.sm, fontSize: fontSize.sm }}>{scheduleError}</div>
+                  ) : (
+                    <div style={{ width: '100%', height: 100, borderRadius: radius.sm }} />
                   )}
-                </div>
-              </TripCard>
+                </ImagePreview>
+              ))}
             </div>
-
-            {/* RIGHT COLUMN */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
-              {/* Trip Information */}
-              <TripCard>
-                <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.lg }}>
-                  <IconButton
-                    icon={<FontAwesomeIcon icon={faPencil} style={{ fontSize: 14 }} />}
-                    onClick={() => openFieldModal('name', tripName)}
-                    style={{ width: 32, height: 32, padding: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                  />
-                  <SectionTitle style={{ marginBottom: '0px', lineHeight: '32px', height: '32px', display: 'flex', alignItems: 'center' }}>{tripName}</SectionTitle>
-                </div>
-
-                <div style={{ marginBottom: spacing.md }}>
-                  <h3 style={{ fontSize: fontSize.base, fontWeight: 600, color: colors.accent5, marginBottom: spacing.sm }}>
-                    Trip Information
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xs, fontSize: fontSize.sm }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
-                      <span style={{ color: colors.text }}>Rp {tripPrice}</span>
-                      <IconButton 
-                        icon={<FontAwesomeIcon icon={faPencil} size="xs" />} 
-                        onClick={() => openFieldModal('price', tripPrice)}
-                        style={{ marginLeft: 'auto', width: 24, height: 24 }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
-                      <span style={{ color: colors.text }}>{tripSlot} Slot Available</span>
-                      <IconButton 
-                        icon={<FontAwesomeIcon icon={faPencil} size="xs" />} 
-                        onClick={() => openFieldModal('slot', tripSlot)}
-                        style={{ marginLeft: 'auto', width: 24, height: 24 }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
-                      <span style={{ color: colors.text }}>
-                        {tripProvince}, {tripCountry}
-                      </span>
-                      <IconButton icon={<FontAwesomeIcon icon={faPencil} size="xs" />} onClick={openLocationModal} style={{ marginLeft: 'auto', width: 24, height: 24 }} />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
-                      <span style={{ color: colors.text }}>{tripDestType}</span>
-                      <IconButton 
-                        icon={<FontAwesomeIcon icon={faPencil} size="xs" />} 
-                        onClick={() => openFieldModal('destType', tripDestType)}
-                        style={{ marginLeft: 'auto', width: 24, height: 24 }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </TripCard>
-
-              {/* Include Section */}
-              <TripCard>
-                <CardHeader>Include</CardHeader>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
-                  {includes.map((item) => (
-                    <div
-                      key={item.id}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '6px 0',
-                      }}
-                    >
-                      <label style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, cursor: 'pointer', flex: 1 }}>
-                        <input
-                          type="checkbox"
-                          checked={item.checked}
-                          onChange={() => {
-                            setIncludes(
-                              includes.map((i) =>
-                                i.id === item.id ? { ...i, checked: !i.checked } : i
-                              )
-                            );
-                          }}
-                          style={{ width: 16, height: 16, cursor: 'pointer' }}
-                        />
-                        <span style={{ fontSize: fontSize.sm }}>{item.name}</span>
-                      </label>
-                      <div style={{ display: 'flex', gap: spacing.xs }}>
-                        <IconButton icon={<FontAwesomeIcon icon={faPencil} />} onClick={() => handleEditInclude(item)} />
-                        <IconButton icon={<FontAwesomeIcon icon={faTrash} />} onClick={() => handleDeleteInclude(item.id)} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <TextLink onClick={() => { setIncludeError(''); setShowIncludeModal(true); }}>+ Others</TextLink>
-              </TripCard>
-
-              {/* Pick Up Point Section */}
-              <TripCard>
-                <CardHeader>Pick Up Point</CardHeader>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
-                  {pickupPoints.map((point) => (
-                    <div
-                      key={point.id}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '6px 0',
-                      }}
-                    >
-                      <label style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, cursor: 'pointer', flex: 1 }}>
-                        <input
-                          type="checkbox"
-                          checked={point.checked}
-                          onChange={() => {
-                            setPickupPoints(
-                              pickupPoints.map((p) =>
-                                p.id === point.id ? { ...p, checked: !p.checked } : p
-                              )
-                            );
-                          }}
-                          style={{ width: 16, height: 16, cursor: 'pointer' }}
-                        />
-                        <span style={{ fontSize: fontSize.sm }}>
-                          <span style={{ color: colors.accent3, fontWeight: 600 }}>[{point.price}]</span>{' '}
-                          {point.location}
-                        </span>
-                      </label>
-                      <div style={{ display: 'flex', gap: spacing.xs }}>
-                        <IconButton icon={<FontAwesomeIcon icon={faPencil} />} onClick={() => handleEditPickupPoint(point)} />
-                        <IconButton icon={<FontAwesomeIcon icon={faTrash} />} onClick={() => handleDeletePickupPoint(point.id)} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <TextLink onClick={() => { setPickupError(''); setShowPickupModal(true); }}>+ Others</TextLink>
-              </TripCard>
-            </div>
-          </div>
-
-          {/* Trip Planner Section */}
-          <div style={{ marginTop: spacing.xl }}>
-            <h2 style={{ fontSize: fontSize.xl, fontWeight: 1000, color: colors.accent5, marginBottom: spacing.lg }}>
-              Trip Planner
-            </h2>
-            
-            <div style={{ display: 'flex', gap: spacing.md, alignItems: 'center', marginBottom: spacing.md }}>
-              <label style={{ fontWeight: 600, color: colors.text }}>Day</label>
-              <select
-                value={openDay}
-                onChange={(e) => setOpenDay(parseInt(e.target.value))}
-                style={{ 
-                  padding: `${spacing.sm} ${spacing.md}`, 
-                  borderRadius: radius.md, 
-                  border: `1px solid ${colors.accent5}20`, 
-                  backgroundColor: colors.bg,
-                  cursor: 'pointer'
-                }}
-              >
-                {Array.from({ length: tripDays }, (_, i) => i + 1).map(d => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
-
-            {tripPlanner[openDay] && (
-              <div style={{
-                backgroundColor: colors.bg,
-                borderRadius: radius.md,
-                overflow: 'hidden',
-                border: `1px solid ${colors.accent5}20`
+            {/* Description Section */}
+            <TripCard>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
+                <CardHeader style={{ margin: 0 }}>Description</CardHeader>
+                <IconButton icon={<FontAwesomeIcon icon={faPencil} />} onClick={() => openFieldModal('description', tripDescription)} />
+              </div>
+              <p style={{ 
+                fontSize: fontSize.sm, 
+                color: colors.text, 
+                lineHeight: 1.6,
+                margin: 0
               }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: colors.accent5 }}>
-                      <th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}`, width: '15%' }}>Time</th>
-                      <th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}`, width: '12%' }}>Duration (hrs)</th>
-                      <th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}`, width: '28%' }}>Activity</th>
-                      <th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}`, width: '28%' }}>Location</th>
-                      <th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}`, width: '10%' }}>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(tripPlanner[openDay] || []).map((activity) => (
-                      <tr key={activity.id} style={{borderBottom: `1px solid ${colors.accent4}`}}>
-                        <td style={{ padding: spacing.sm }}>
-                          <input
-                            type="text"
-                            value={activity.time}
-                            onChange={(e) => handleActivityChange(openDay, activity.id, 'time', e.target.value)}
-                            placeholder="06.00 - 07.00"
-                            style={{
-                              width: '100%',
-                              padding: spacing.sm,
-                              border: '1px solid #D4C4A8',
-                              borderRadius: radius.sm,
-                              backgroundColor: '#F9F5EE',
-                              fontSize: fontSize.sm,
-                              outline: 'none'
-                            }}
-                          />
-                        </td>
-                        <td style={{ padding: spacing.sm }}>
-                          <input
-                            type="number"
-                            value={activity.duration}
-                            onChange={(e) => handleActivityChange(openDay, activity.id, 'duration', e.target.value)}
-                            placeholder="1"
-                            style={{
-                              width: '100%',
-                              padding: spacing.sm,
-                              border: '1px solid #D4C4A8',
-                              borderRadius: radius.sm,
-                              backgroundColor: '#F9F5EE',
-                              fontSize: fontSize.sm,
-                              outline: 'none'
-                            }}
-                          />
-                        </td>
-                        <td style={{ padding: spacing.sm }}>
-                          <input
-                            type="text"
-                            value={activity.activity}
-                            onChange={(e) => handleActivityChange(openDay, activity.id, 'activity', e.target.value)}
-                            placeholder="Meeting point & briefing"
-                            style={{
-                              width: '100%',
-                              padding: spacing.sm,
-                              border: '1px solid #D4C4A8',
-                              borderRadius: radius.sm,
-                              backgroundColor: '#F9F5EE',
-                              fontSize: fontSize.sm,
-                              outline: 'none'
-                            }}
-                          />
-                        </td>
-                        <td style={{ padding: spacing.sm }}>
-                          <input
-                            type="text"
-                            value={activity.location}
-                            onChange={(e) => handleActivityChange(openDay, activity.id, 'location', e.target.value)}
-                            placeholder="Bandar Udara Komodo"
-                            style={{
-                              width: '100%',
-                              padding: spacing.sm,
-                              border: '1px solid #D4C4A8',
-                              borderRadius: radius.sm,
-                              backgroundColor: '#F9F5EE',
-                              fontSize: fontSize.sm,
-                              outline: 'none'
-                            }}
-                          />
-                        </td>
-                        <td style={{ padding: spacing.sm }}>
-                          <div style={{ display: 'flex', gap: spacing.xs, justifyContent: 'center', alignItems: 'center' }}>
-                            <IconButton 
-                              icon={<FontAwesomeIcon icon={faTrash} />}
-                              onClick={() => handleDeleteActivity(openDay, activity.id)}
-                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, padding: 0 }}
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                <div style={{ padding: spacing.md, textAlign: 'center', borderTop: '1px solid #E8D4B8' }}>
-                  <button
-                    onClick={() => handleAddActivity(openDay)}
+                {tripDescription}
+              </p>
+            </TripCard>
+            {/* Schedule Section */}
+            <TripCard>
+              <CardHeader>Schedule</CardHeader>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
+                {schedules.map((schedule) => (
+                  <div
+                    key={schedule.id}
                     style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      border: `2px solid ${colors.accent5}`,
-                      backgroundColor: 'transparent',
-                      color: colors.accent5,
-                      cursor: 'pointer',
                       display: 'flex',
+                      justifyContent: 'space-between',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: fontSize.lg,
-                      margin: '0 auto'
+                      padding: '8px 0',
                     }}
                   >
-                    <FontAwesomeIcon icon={faPlus} />
-                  </button>
+                    <span style={{ fontSize: fontSize.base }}>{formatDateRange(schedule.text)}</span>
+                    <div style={{ display: 'flex', gap: spacing.xs }}>
+                      <IconButton icon={<FontAwesomeIcon icon={faPencil} />} onClick={() => handleEditSchedule(schedule)} />
+                      <IconButton icon={<FontAwesomeIcon icon={faTrash} />} onClick={() => handleDeleteSchedule(schedule.id)} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: spacing.md }}>
+                <div style={{ display: 'flex', gap: spacing.sm, alignItems: 'end' }}>
+                  <div style={{ flex: 1 }}>
+                    <InputField label="Start Date" type="date" value={newScheduleStartDate} onChange={(e) => { setNewScheduleStartDate(e.target.value); setScheduleError(''); }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <InputField label="End Date" type="date" value={newScheduleEndDate} onChange={(e) => { setNewScheduleEndDate(e.target.value); setScheduleError(''); }} />
+                  </div>
+                  <AddButton onClick={handleAddSchedule} />
+                </div>
+                {scheduleError && (
+                  <div style={{ color: colors.error, marginTop: spacing.sm, fontSize: fontSize.sm }}>{scheduleError}</div>
+                )}
+              </div>
+            </TripCard>
+          </div>
+          {/* RIGHT COLUMN */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
+            {/* Trip Information */}
+            <TripCard>
+              <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.lg }}>
+                <IconButton
+                  icon={<FontAwesomeIcon icon={faPencil} style={{ fontSize: 14 }} />}
+                  onClick={() => openFieldModal('name', tripName)}
+                  style={{ width: 32, height: 32, padding: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                />
+                <SectionTitle style={{ marginBottom: '0px', lineHeight: '32px', height: '32px', display: 'flex', alignItems: 'center' }}>{tripName}</SectionTitle>
+              </div>
+              <div style={{ marginBottom: spacing.md }}>
+                <h3 style={{ fontSize: fontSize.base, fontWeight: 600, color: colors.accent5, marginBottom: spacing.sm }}>
+                  Trip Information
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xs, fontSize: fontSize.sm }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+                    <span style={{ color: colors.text }}>Rp {tripPrice}</span>
+                    <IconButton 
+                      icon={<FontAwesomeIcon icon={faPencil} size="xs" />} 
+                      onClick={() => openFieldModal('price', tripPrice)}
+                      style={{ marginLeft: 'auto', width: 24, height: 24 }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+                    <span style={{ color: colors.text }}>{tripSlot} Slot Available</span>
+                    <IconButton 
+                      icon={<FontAwesomeIcon icon={faPencil} size="xs" />} 
+                      onClick={() => openFieldModal('slot', tripSlot)}
+                      style={{ marginLeft: 'auto', width: 24, height: 24 }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+                    <span style={{ color: colors.text }}>
+                      {tripProvince}, {tripCountry}
+                    </span>
+                    <IconButton icon={<FontAwesomeIcon icon={faPencil} size="xs" />} onClick={openLocationModal} style={{ marginLeft: 'auto', width: 24, height: 24 }} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+                    <span style={{ color: colors.text }}>{tripDestType}</span>
+                    <IconButton 
+                      icon={<FontAwesomeIcon icon={faPencil} size="xs" />} 
+                      onClick={() => openFieldModal('destType', tripDestType)}
+                      style={{ marginLeft: 'auto', width: 24, height: 24 }}
+                    />
+                  </div>
                 </div>
               </div>
-            )}
-
-            {/* Keep Trip Button */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: spacing.lg }}>
-              <Button variant="primary" style={{ minWidth: '200px', padding: `${spacing.md} ${spacing.xl}` }}>
-                <FontAwesomeIcon icon={faCheck} /> Keep Trip
-              </Button>
+            </TripCard>
+            {/* Include Section */}
+            <TripCard>
+              <CardHeader>Include</CardHeader>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
+                {includes.map((item) => (
+                  <div
+                    key={item.id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '6px 0',
+                    }}
+                  >
+                    <label style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, cursor: 'pointer', flex: 1 }}>
+                      <input
+                        type="checkbox"
+                        checked={item.checked}
+                        onChange={() => {
+                          setIncludes(
+                            includes.map((i) =>
+                              i.id === item.id ? { ...i, checked: !i.checked } : i
+                            )
+                          );
+                        }}
+                        style={{ width: 16, height: 16, cursor: 'pointer' }}
+                      />
+                      <span style={{ fontSize: fontSize.sm }}>{item.name}</span>
+                    </label>
+                    <div style={{ display: 'flex', gap: spacing.xs }}>
+                      <IconButton icon={<FontAwesomeIcon icon={faPencil} />} onClick={() => handleEditInclude(item)} />
+                      <IconButton icon={<FontAwesomeIcon icon={faTrash} />} onClick={() => handleDeleteInclude(item.id)} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <TextLink onClick={() => { setIncludeError(''); setShowIncludeModal(true); }}>+ Others</TextLink>
+            </TripCard>
+            {/* Pick Up Point Section */}
+            <TripCard>
+              <CardHeader>Pick Up Point</CardHeader>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
+                {pickupPoints.map((point) => (
+                  <div
+                    key={point.id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '6px 0',
+                    }}
+                  >
+                    <label style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, cursor: 'pointer', flex: 1 }}>
+                      <input
+                        type="checkbox"
+                        checked={point.checked}
+                        onChange={() => {
+                          setPickupPoints(
+                            pickupPoints.map((p) =>
+                              p.id === point.id ? { ...p, checked: !p.checked } : p
+                            )
+                          );
+                        }}
+                        style={{ width: 16, height: 16, cursor: 'pointer' }}
+                      />
+                      <span style={{ fontSize: fontSize.sm }}>
+                        <span style={{ color: colors.accent3, fontWeight: 600 }}>[{point.price}]</span>{' '}
+                        {point.location}
+                      </span>
+                    </label>
+                    <div style={{ display: 'flex', gap: spacing.xs }}>
+                      <IconButton icon={<FontAwesomeIcon icon={faPencil} />} onClick={() => handleEditPickupPoint(point)} />
+                      <IconButton icon={<FontAwesomeIcon icon={faTrash} />} onClick={() => handleDeletePickupPoint(point.id)} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <TextLink onClick={() => { setPickupError(''); setShowPickupModal(true); }}>+ Others</TextLink>
+            </TripCard>
+          </div>
+        </div>
+        {/* Trip Planner Section */}
+        <div style={{ marginTop: spacing.xl }}>
+          <h2 style={{ fontSize: fontSize.xl, fontWeight: 1000, color: colors.accent5, marginBottom: spacing.lg }}>
+            Trip Planner
+          </h2>
+          
+          <div style={{ display: 'flex', gap: spacing.md, alignItems: 'center', marginBottom: spacing.md }}>
+            <label style={{ fontWeight: 600, color: colors.text }}>Day</label>
+            <select
+              value={openDay}
+              onChange={(e) => setOpenDay(parseInt(e.target.value))}
+              style={{ 
+                padding: `${spacing.sm} ${spacing.md}`, 
+                borderRadius: radius.md, 
+                border: `1px solid ${colors.accent5}20`, 
+                backgroundColor: colors.bg,
+                cursor: 'pointer'
+              }}
+            >
+              {Array.from({ length: tripDays }, (_, i) => i + 1).map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+          {tripPlanner[openDay] && (
+            <div style={{
+              backgroundColor: colors.bg,
+              borderRadius: radius.md,
+              overflow: 'hidden',
+              border: `1px solid ${colors.accent5}20`
+            }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ backgroundColor: colors.accent5 }}>
+                    <th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}`, width: '15%' }}>Time</th>
+                    <th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}`, width: '12%' }}>Duration (hrs)</th>
+                    <th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}`, width: '28%' }}>Activity</th>
+                    <th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}`, width: '28%' }}>Location</th>
+                    <th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}`, width: '10%' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(tripPlanner[openDay] || []).map((activity) => (
+                    <tr key={activity.id} style={{borderBottom: `1px solid ${colors.accent4}`}}>
+                      <td style={{ padding: spacing.sm }}>
+                        <input
+                          type="text"
+                          value={activity.time}
+                          onChange={(e) => handleActivityChange(openDay, activity.id, 'time', e.target.value)}
+                          placeholder="06.00 - 07.00"
+                          style={{
+                            width: '100%',
+                            padding: spacing.sm,
+                            border: '1px solid #D4C4A8',
+                            borderRadius: radius.sm,
+                            backgroundColor: '#F9F5EE',
+                            fontSize: fontSize.sm,
+                            outline: 'none'
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: spacing.sm }}>
+                        <input
+                          type="number"
+                          value={activity.duration}
+                          onChange={(e) => handleActivityChange(openDay, activity.id, 'duration', e.target.value)}
+                          placeholder="1"
+                          style={{
+                            width: '100%',
+                            padding: spacing.sm,
+                            border: '1px solid #D4C4A8',
+                            borderRadius: radius.sm,
+                            backgroundColor: '#F9F5EE',
+                            fontSize: fontSize.sm,
+                            outline: 'none'
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: spacing.sm }}>
+                        <input
+                          type="text"
+                          value={activity.activity}
+                          onChange={(e) => handleActivityChange(openDay, activity.id, 'activity', e.target.value)}
+                          placeholder="Meeting point & briefing"
+                          style={{
+                            width: '100%',
+                            padding: spacing.sm,
+                            border: '1px solid #D4C4A8',
+                            borderRadius: radius.sm,
+                            backgroundColor: '#F9F5EE',
+                            fontSize: fontSize.sm,
+                            outline: 'none'
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: spacing.sm }}>
+                        <input
+                          type="text"
+                          value={activity.location}
+                          onChange={(e) => handleActivityChange(openDay, activity.id, 'location', e.target.value)}
+                          placeholder="Bandar Udara Komodo"
+                          style={{
+                            width: '100%',
+                            padding: spacing.sm,
+                            border: '1px solid #D4C4A8',
+                            borderRadius: radius.sm,
+                            backgroundColor: '#F9F5EE',
+                            fontSize: fontSize.sm,
+                            outline: 'none'
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: spacing.sm }}>
+                        <div style={{ display: 'flex', gap: spacing.xs, justifyContent: 'center', alignItems: 'center' }}>
+                          <IconButton 
+                            icon={<FontAwesomeIcon icon={faTrash} />}
+                            onClick={() => handleDeleteActivity(openDay, activity.id)}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, padding: 0 }}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div style={{ padding: spacing.md, textAlign: 'center', borderTop: '1px solid #E8D4B8' }}>
+                <button
+                  onClick={() => handleAddActivity(openDay)}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    border: `2px solid ${colors.accent5}`,
+                    backgroundColor: 'transparent',
+                    color: colors.accent5,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: fontSize.lg,
+                    margin: '0 auto'
+                  }}
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                </button>
+              </div>
             </div>
+          )}
+          {/* Keep Trip Button */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: spacing.lg }}>
+            <Button variant="primary" style={{ minWidth: '200px', padding: `${spacing.md} ${spacing.xl}` }}>
+              <FontAwesomeIcon icon={faCheck} /> Keep Trip
+            </Button>
           </div>
         </div>
       </div>
-
-      {/* Modals */}
-      {showIncludeModal && (
-        <Modal open={showIncludeModal} onClose={() => { setShowIncludeModal(false); setNewIncludeName(''); }} title="Add Custom Include">
-          <div style={{ marginBottom: spacing.lg }}>
-            <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Include Name</label>
-            <input
-              type="text"
-              value={newIncludeName}
-              onChange={(e) => { setNewIncludeName(e.target.value); setIncludeError(''); }}
-              style={{
-                width: '100%',
-                padding: spacing.md,
-                border: 'none',
-                borderRadius: radius.md,
-                fontSize: fontSize.base,
-                outline: 'none'
-              }}
-            />
-          </div>
-          {includeError && (
-            <div style={{ color: colors.error, marginBottom: spacing.md }}>{includeError}</div>
-          )}
-          <div style={{ display: 'flex', gap: spacing.md }}>
-            <Button variant="primary" onClick={handleAddInclude} style={{ display: 'inline-flex' }}>
-              <FontAwesomeIcon icon={faCheck} /> Confirm
-            </Button>
-            <Button variant="primary" onClick={() => { setShowIncludeModal(false); setNewIncludeName(''); }} style={{ display: 'inline-flex' }}>
-              <FontAwesomeIcon icon={faXmark} /> Cancel
-            </Button>
-          </div>
-        </Modal>
-      )}
-
-            {showFieldModal && (
-        <Modal open={showFieldModal} onClose={() => setShowFieldModal(false)} title={fieldToEdit === 'description' ? 'Edit Description' : `Edit ${fieldToEdit.charAt(0).toUpperCase() + fieldToEdit.slice(1)}`}>
-          <div style={{ marginBottom: spacing.md }}>
-            {fieldToEdit === 'description' ? (
-              <div>
-                <textarea value={fieldValue} onChange={(e) => setFieldValue(e.target.value)} rows={6} maxLength={400} style={{ width: '100%', padding: spacing.md, border: 'none', borderRadius: radius.md, outline: 'none', resize: 'vertical' }} />
-                <div style={{ marginTop: spacing.sm, fontSize: fontSize.sm, color: colors.text }}>{fieldValue.length}/400</div>
-              </div>
-            ) : fieldToEdit === 'destType' ? (
-              <div>
-                <select value={fieldValue} onChange={(e) => setFieldValue(e.target.value)} style={{ width: '100%', padding: spacing.md, border: 'none', borderRadius: radius.md, outline: 'none' }}>
-                  {DEST_OPTIONS.map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                  <option value="Other">Other</option>
-                </select>
-                {fieldValue === 'Other' && (
-                  <div style={{ marginTop: spacing.sm }}>
-                    <InputField label="Custom Destination Type" type="text" value={fieldCustomValue} onChange={(e) => setFieldCustomValue(e.target.value)} />
-                  </div>
-                )}
-              </div>
-            ) : (
-              <input type="text" value={fieldValue} onChange={(e) => setFieldValue(e.target.value)} style={{ width: '100%', padding: spacing.md, border: 'none', borderRadius: radius.md, outline: 'none' }} />
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: spacing.md }}>
-            <Button variant="primary" onClick={saveFieldModal} style={{ display: 'inline-flex' }}>
-              <FontAwesomeIcon icon={faCheck} /> Save
-            </Button>
-            <Button variant="primary" onClick={() => setShowFieldModal(false)} style={{ display: 'inline-flex' }}>
-              <FontAwesomeIcon icon={faXmark} /> Cancel
-            </Button>
-          </div>
-        </Modal>
-      )}
-
-      {showLocationModal && (
-        <Modal open={showLocationModal} onClose={() => setShowLocationModal(false)} title="Edit Province & Country">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing.md, marginBottom: spacing.md }}>
+    </div>
+    {/* Modals */}
+    {showIncludeModal && (
+      <Modal open={showIncludeModal} onClose={() => { setShowIncludeModal(false); setNewIncludeName(''); }} title="Add Custom Include">
+        <div style={{ marginBottom: spacing.lg }}>
+          <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Include Name</label>
+          <input
+            type="text"
+            value={newIncludeName}
+            onChange={(e) => { setNewIncludeName(e.target.value); setIncludeError(''); }}
+            style={{
+              width: '100%',
+              padding: spacing.md,
+              border: 'none',
+              borderRadius: radius.md,
+              fontSize: fontSize.base,
+              outline: 'none'
+            }}
+          />
+        </div>
+        {includeError && (
+          <div style={{ color: colors.error, marginBottom: spacing.md }}>{includeError}</div>
+        )}
+        <div style={{ display: 'flex', gap: spacing.md }}>
+          <Button variant="primary" onClick={handleAddInclude} style={{ display: 'inline-flex' }}>
+            <FontAwesomeIcon icon={faCheck} /> Confirm
+          </Button>
+          <Button variant="primary" onClick={() => { setShowIncludeModal(false); setNewIncludeName(''); }} style={{ display: 'inline-flex' }}>
+            <FontAwesomeIcon icon={faXmark} /> Cancel
+          </Button>
+        </div>
+      </Modal>
+    )}
+          {showFieldModal && (
+      <Modal open={showFieldModal} onClose={() => setShowFieldModal(false)} title={fieldToEdit === 'description' ? 'Edit Description' : `Edit ${fieldToEdit.charAt(0).toUpperCase() + fieldToEdit.slice(1)}`}>
+        <div style={{ marginBottom: spacing.md }}>
+          {fieldToEdit === 'description' ? (
             <div>
-              <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Province / State</label>
-              <input type="text" value={editLocationProvince} onChange={(e) => setEditLocationProvince(e.target.value)} style={{ width: '100%', padding: spacing.md, border: 'none', borderRadius: radius.md, outline: 'none' }} />
+              <textarea value={fieldValue} onChange={(e) => setFieldValue(e.target.value)} rows={6} maxLength={400} style={{ width: '100%', padding: spacing.md, border: 'none', borderRadius: radius.md, outline: 'none', resize: 'vertical' }} />
+              <div style={{ marginTop: spacing.sm, fontSize: fontSize.sm, color: colors.text }}>{fieldValue.length}/400</div>
             </div>
+          ) : fieldToEdit === 'destType' ? (
             <div>
-              <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Country</label>
-              <input type="text" value={editLocationCountry} onChange={(e) => setEditLocationCountry(e.target.value)} style={{ width: '100%', padding: spacing.md, border: 'none', borderRadius: radius.md, outline: 'none' }} />
+              <select value={fieldValue} onChange={(e) => setFieldValue(e.target.value)} style={{ width: '100%', padding: spacing.md, border: 'none', borderRadius: radius.md, outline: 'none' }}>
+                {DEST_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+                <option value="Other">Other</option>
+              </select>
+              {fieldValue === 'Other' && (
+                <div style={{ marginTop: spacing.sm }}>
+                  <InputField label="Custom Destination Type" type="text" value={fieldCustomValue} onChange={(e) => setFieldCustomValue(e.target.value)} />
+                </div>
+              )}
             </div>
-          </div>
-          <div style={{ display: 'flex', gap: spacing.md }}>
-            <Button variant="primary" onClick={() => { setTripProvince(editLocationProvince); setTripCountry(editLocationCountry); setShowLocationModal(false); }} style={{ display: 'inline-flex' }}>
-              <FontAwesomeIcon icon={faCheck} /> Save
-            </Button>
-            <Button variant="primary" onClick={() => setShowLocationModal(false)} style={{ display: 'inline-flex' }}>
-              <FontAwesomeIcon icon={faXmark} /> Cancel
-            </Button>
-          </div>
-        </Modal>
-      )}
-
-      {showEditScheduleModal && (
-        <Modal open={showEditScheduleModal} onClose={() => { setShowEditScheduleModal(false); setEditingSchedule(null); }} title="Edit Schedule">
-          <div style={{ marginBottom: spacing.md }}>
-            <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Start Date</label>
-            <input
-              type="date"
-              value={editScheduleStartDate}
-              onChange={(e) => { setEditScheduleStartDate(e.target.value); setEditScheduleError(''); }}
-              style={{
-                width: '100%',
-                padding: spacing.md,
-                border: 'none',
-                borderRadius: radius.md,
-                fontSize: fontSize.base,
-                outline: 'none'
-              }}
-            />
-          </div>
-          <div style={{ marginBottom: spacing.lg }}>
-            <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>End Date</label>
-            <input
-              type="date"
-              value={editScheduleEndDate}
-              onChange={(e) => { setEditScheduleEndDate(e.target.value); setEditScheduleError(''); }}
-              style={{
-                width: '100%',
-                padding: spacing.md,
-                border: 'none',
-                borderRadius: radius.md,
-                fontSize: fontSize.base,
-                outline: 'none'
-              }}
-            />
-          </div>
-          {editScheduleError && (
-            <div style={{ color: colors.error, marginBottom: spacing.md }}>{editScheduleError}</div>
+          ) : (
+            <input type="text" value={fieldValue} onChange={(e) => setFieldValue(e.target.value)} style={{ width: '100%', padding: spacing.md, border: 'none', borderRadius: radius.md, outline: 'none' }} />
           )}
-          <div style={{ display: 'flex', gap: spacing.md }}>
-            <Button variant="primary" onClick={handleSaveEditSchedule} style={{ display: 'inline-flex' }}>
-              <FontAwesomeIcon icon={faCheck} /> Confirm
-            </Button>
-            <Button variant="primary" onClick={() => { setShowEditScheduleModal(false); setEditingSchedule(null); }} style={{ display: 'inline-flex' }}>
-              <FontAwesomeIcon icon={faXmark} /> Cancel
-            </Button>
+        </div>
+        <div style={{ display: 'flex', gap: spacing.md }}>
+          <Button variant="primary" onClick={saveFieldModal} style={{ display: 'inline-flex' }}>
+            <FontAwesomeIcon icon={faCheck} /> Save
+          </Button>
+          <Button variant="primary" onClick={() => setShowFieldModal(false)} style={{ display: 'inline-flex' }}>
+            <FontAwesomeIcon icon={faXmark} /> Cancel
+          </Button>
+        </div>
+      </Modal>
+    )}
+    {showLocationModal && (
+      <Modal open={showLocationModal} onClose={() => setShowLocationModal(false)} title="Edit Province & Country">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing.md, marginBottom: spacing.md }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Province / State</label>
+            <input type="text" value={editLocationProvince} onChange={(e) => setEditLocationProvince(e.target.value)} style={{ width: '100%', padding: spacing.md, border: 'none', borderRadius: radius.md, outline: 'none' }} />
           </div>
-        </Modal>
-      )}
-
-      {showEditPickupModal && editingPickup && (
-        <Modal open={showEditPickupModal} onClose={() => { setShowEditPickupModal(false); setEditingPickup(null); }} title="Edit Pick Up Point">
-          <div style={{ marginBottom: spacing.md }}>
-            <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Pick Up Point Name</label>
-            <input
-              type="text"
-              value={editingPickup.location}
-              onChange={(e) => setEditingPickup({ ...editingPickup, location: e.target.value })}
-              style={{
-                width: '100%',
-                padding: spacing.md,
-                border: 'none',
-                borderRadius: radius.md,
-                fontSize: fontSize.base,
-                outline: 'none'
-              }}
-            />
+          <div>
+            <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Country</label>
+            <input type="text" value={editLocationCountry} onChange={(e) => setEditLocationCountry(e.target.value)} style={{ width: '100%', padding: spacing.md, border: 'none', borderRadius: radius.md, outline: 'none' }} />
           </div>
-          <div style={{ marginBottom: spacing.lg }}>
-            <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Price</label>
-            <input
-              type="text"
-              value={editingPickup.price}
-              onChange={(e) => { setEditingPickup({ ...editingPickup, price: e.target.value }); setEditPickupError(''); }}
-              style={{
-                width: '100%',
-                padding: spacing.md,
-                border: 'none',
-                borderRadius: radius.md,
-                fontSize: fontSize.base,
-                outline: 'none'
-              }}
-            />
-          </div>
-          {editPickupError && (
-            <div style={{ color: colors.error, marginBottom: spacing.md }}>{editPickupError}</div>
-          )}
-          <div style={{ display: 'flex', gap: spacing.md }}>
-            <Button variant="primary" onClick={handleSaveEditPickupPoint} style={{ display: 'inline-flex' }}>
-              <FontAwesomeIcon icon={faCheck} /> Confirm
-            </Button>
-            <Button variant="primary" onClick={() => { setShowEditPickupModal(false); setEditingPickup(null); }} style={{ display: 'inline-flex' }}>
-              <FontAwesomeIcon icon={faXmark} /> Cancel
-            </Button>
-          </div>
-        </Modal>
-      )}
-
-      {showEditIncludeModal && editingInclude && (
-        <Modal open={showEditIncludeModal} onClose={() => { setShowEditIncludeModal(false); setEditingInclude(null); }} title="Edit Include">
-          <div style={{ marginBottom: spacing.lg }}>
-            <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Include Name</label>
-            <input
-              type="text"
-              value={editingInclude.name}
-              onChange={(e) => { setEditingInclude({ ...editingInclude, name: e.target.value }); setEditIncludeError(''); }}
-              style={{
-                width: '100%',
-                padding: spacing.md,
-                border: 'none',
-                borderRadius: radius.md,
-                fontSize: fontSize.base,
-                outline: 'none'
-              }}
-            />
-          </div>
-          {editIncludeError && (
-            <div style={{ color: colors.error, marginBottom: spacing.md }}>{editIncludeError}</div>
-          )}
-          <div style={{ display: 'flex', gap: spacing.md }}>
-            <Button variant="primary" onClick={handleSaveEditInclude} style={{ display: 'inline-flex' }}>
-              <FontAwesomeIcon icon={faCheck} /> Confirm
-            </Button>
-            <Button variant="primary" onClick={() => { setShowEditIncludeModal(false); setEditingInclude(null); }} style={{ display: 'inline-flex' }}>
-              <FontAwesomeIcon icon={faXmark} /> Cancel
-            </Button>
-          </div>
-        </Modal>
-      )}
-
-      {showPickupModal && (
-        <Modal open={showPickupModal} onClose={() => { setShowPickupModal(false); setNewPickupPrice(''); setNewPickupLocation(''); }} title="Add Custom Pick Up Point">
-          <div style={{ marginBottom: spacing.md }}>
-            <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Pick Up Point Name</label>
-            <input
-              type="text"
-              value={newPickupLocation}
-              onChange={(e) => { setNewPickupLocation(e.target.value); setPickupError(''); }}
-              style={{
-                width: '100%',
-                padding: spacing.md,
-                border: 'none',
-                borderRadius: radius.md,
-                fontSize: fontSize.base,
-                outline: 'none'
-              }}
-            />
-          </div>
-          <div style={{ marginBottom: spacing.lg }}>
-            <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Price</label>
-            <input
-              type="text"
-              value={newPickupPrice}
-              onChange={(e) => { setNewPickupPrice(e.target.value); setPickupError(''); }}
-              style={{
-                width: '100%',
-                padding: spacing.md,
-                border: 'none',
-                borderRadius: radius.md,
-                fontSize: fontSize.base,
-                outline: 'none'
-              }}
-            />
-          </div>
-          {pickupError && (
-            <div style={{ color: colors.error, marginBottom: spacing.md }}>{pickupError}</div>
-          )}
-          <div style={{ display: 'flex', gap: spacing.md }}>
-            <Button variant="primary" onClick={handleAddPickupPoint} style={{ display: 'inline-flex' }}>
-              <FontAwesomeIcon icon={faCheck} /> Confirm
-            </Button>
-            <Button variant="primary" onClick={() => { setShowPickupModal(false); setNewPickupPrice(''); setNewPickupLocation(''); }} style={{ display: 'inline-flex' }}>
-              <FontAwesomeIcon icon={faXmark} /> Cancel
-            </Button>
-          </div>
-        </Modal>
-      )}
-    </>
-  );
+        </div>
+        <div style={{ display: 'flex', gap: spacing.md }}>
+          <Button variant="primary" onClick={() => { setTripProvince(editLocationProvince); setTripCountry(editLocationCountry); setShowLocationModal(false); }} style={{ display: 'inline-flex' }}>
+            <FontAwesomeIcon icon={faCheck} /> Save
+          </Button>
+          <Button variant="primary" onClick={() => setShowLocationModal(false)} style={{ display: 'inline-flex' }}>
+            <FontAwesomeIcon icon={faXmark} /> Cancel
+          </Button>
+        </div>
+      </Modal>
+    )}
+    {showEditScheduleModal && (
+      <Modal open={showEditScheduleModal} onClose={() => { setShowEditScheduleModal(false); setEditingSchedule(null); }} title="Edit Schedule">
+        <div style={{ marginBottom: spacing.md }}>
+          <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Start Date</label>
+          <input
+            type="date"
+            value={editScheduleStartDate}
+            onChange={(e) => { setEditScheduleStartDate(e.target.value); setEditScheduleError(''); }}
+            style={{
+              width: '100%',
+              padding: spacing.md,
+              border: 'none',
+              borderRadius: radius.md,
+              fontSize: fontSize.base,
+              outline: 'none'
+            }}
+          />
+        </div>
+        <div style={{ marginBottom: spacing.lg }}>
+          <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>End Date</label>
+          <input
+            type="date"
+            value={editScheduleEndDate}
+            onChange={(e) => { setEditScheduleEndDate(e.target.value); setEditScheduleError(''); }}
+            style={{
+              width: '100%',
+              padding: spacing.md,
+              border: 'none',
+              borderRadius: radius.md,
+              fontSize: fontSize.base,
+              outline: 'none'
+            }}
+          />
+        </div>
+        {editScheduleError && (
+          <div style={{ color: colors.error, marginBottom: spacing.md }}>{editScheduleError}</div>
+        )}
+        <div style={{ display: 'flex', gap: spacing.md }}>
+          <Button variant="primary" onClick={handleSaveEditSchedule} style={{ display: 'inline-flex' }}>
+            <FontAwesomeIcon icon={faCheck} /> Confirm
+          </Button>
+          <Button variant="primary" onClick={() => { setShowEditScheduleModal(false); setEditingSchedule(null); }} style={{ display: 'inline-flex' }}>
+            <FontAwesomeIcon icon={faXmark} /> Cancel
+          </Button>
+        </div>
+      </Modal>
+    )}
+    {showEditPickupModal && editingPickup && (
+      <Modal open={showEditPickupModal} onClose={() => { setShowEditPickupModal(false); setEditingPickup(null); }} title="Edit Pick Up Point">
+        <div style={{ marginBottom: spacing.md }}>
+          <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Pick Up Point Name</label>
+          <input
+            type="text"
+            value={editingPickup.location}
+            onChange={(e) => setEditingPickup({ ...editingPickup, location: e.target.value })}
+            style={{
+              width: '100%',
+              padding: spacing.md,
+              border: 'none',
+              borderRadius: radius.md,
+              fontSize: fontSize.base,
+              outline: 'none'
+            }}
+          />
+        </div>
+        <div style={{ marginBottom: spacing.lg }}>
+          <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Price</label>
+          <input
+            type="text"
+            value={editingPickup.price}
+            onChange={(e) => { setEditingPickup({ ...editingPickup, price: e.target.value }); setEditPickupError(''); }}
+            style={{
+              width: '100%',
+              padding: spacing.md,
+              border: 'none',
+              borderRadius: radius.md,
+              fontSize: fontSize.base,
+              outline: 'none'
+            }}
+          />
+        </div>
+        {editPickupError && (
+          <div style={{ color: colors.error, marginBottom: spacing.md }}>{editPickupError}</div>
+        )}
+        <div style={{ display: 'flex', gap: spacing.md }}>
+          <Button variant="primary" onClick={handleSaveEditPickupPoint} style={{ display: 'inline-flex' }}>
+            <FontAwesomeIcon icon={faCheck} /> Confirm
+          </Button>
+          <Button variant="primary" onClick={() => { setShowEditPickupModal(false); setEditingPickup(null); }} style={{ display: 'inline-flex' }}>
+            <FontAwesomeIcon icon={faXmark} /> Cancel
+          </Button>
+        </div>
+      </Modal>
+    )}
+    {showEditIncludeModal && editingInclude && (
+      <Modal open={showEditIncludeModal} onClose={() => { setShowEditIncludeModal(false); setEditingInclude(null); }} title="Edit Include">
+        <div style={{ marginBottom: spacing.lg }}>
+          <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Include Name</label>
+          <input
+            type="text"
+            value={editingInclude.name}
+            onChange={(e) => { setEditingInclude({ ...editingInclude, name: e.target.value }); setEditIncludeError(''); }}
+            style={{
+              width: '100%',
+              padding: spacing.md,
+              border: 'none',
+              borderRadius: radius.md,
+              fontSize: fontSize.base,
+              outline: 'none'
+            }}
+          />
+        </div>
+        {editIncludeError && (
+          <div style={{ color: colors.error, marginBottom: spacing.md }}>{editIncludeError}</div>
+        )}
+        <div style={{ display: 'flex', gap: spacing.md }}>
+          <Button variant="primary" onClick={handleSaveEditInclude} style={{ display: 'inline-flex' }}>
+            <FontAwesomeIcon icon={faCheck} /> Confirm
+          </Button>
+          <Button variant="primary" onClick={() => { setShowEditIncludeModal(false); setEditingInclude(null); }} style={{ display: 'inline-flex' }}>
+            <FontAwesomeIcon icon={faXmark} /> Cancel
+          </Button>
+        </div>
+      </Modal>
+    )}
+    {showPickupModal && (
+      <Modal open={showPickupModal} onClose={() => { setShowPickupModal(false); setNewPickupPrice(''); setNewPickupLocation(''); }} title="Add Custom Pick Up Point">
+        <div style={{ marginBottom: spacing.md }}>
+          <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Pick Up Point Name</label>
+          <input
+            type="text"
+            value={newPickupLocation}
+            onChange={(e) => { setNewPickupLocation(e.target.value); setPickupError(''); }}
+            style={{
+              width: '100%',
+              padding: spacing.md,
+              border: 'none',
+              borderRadius: radius.md,
+              fontSize: fontSize.base,
+              outline: 'none'
+            }}
+          />
+        </div>
+        <div style={{ marginBottom: spacing.lg }}>
+          <label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Price</label>
+          <input
+            type="text"
+            value={newPickupPrice}
+            onChange={(e) => { setNewPickupPrice(e.target.value); setPickupError(''); }}
+            style={{
+              width: '100%',
+              padding: spacing.md,
+              border: 'none',
+              borderRadius: radius.md,
+              fontSize: fontSize.base,
+              outline: 'none'
+            }}
+          />
+        </div>
+        {pickupError && (
+          <div style={{ color: colors.error, marginBottom: spacing.md }}>{pickupError}</div>
+        )}
+        <div style={{ display: 'flex', gap: spacing.md }}>
+          <Button variant="primary" onClick={handleAddPickupPoint} style={{ display: 'inline-flex' }}>
+            <FontAwesomeIcon icon={faCheck} /> Confirm
+          </Button>
+          <Button variant="primary" onClick={() => { setShowPickupModal(false); setNewPickupPrice(''); setNewPickupLocation(''); }} style={{ display: 'inline-flex' }}>
+            <FontAwesomeIcon icon={faXmark} /> Cancel
+          </Button>
+        </div>
+      </Modal>
+    )}
+  </> );
 }

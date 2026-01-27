@@ -388,10 +388,9 @@ const NewTripPage = () => {
 		marginTop: spacing.lg,
 	};
 
-	return (
-		<>
-			<Navbar style={{ background: 'transparent' }} />
-			<div style={pageStyle}>
+	return (<>
+		<div style={pageStyle}>
+			<Navbar />
 				<div style={containerStyle}>
 					<div style={gridStyle}>
 						{/* LEFT COLUMN */}
@@ -782,7 +781,7 @@ const NewTripPage = () => {
 						</div>
 					</div>
 				</div>
-			</div>
+		</div>
 
 						{/* Modal for Add Custom Include */}
 						{showIncludeModal && (

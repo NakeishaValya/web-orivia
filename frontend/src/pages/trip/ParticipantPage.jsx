@@ -1,10 +1,11 @@
 import React from 'react';
-import { spacing, fontFamily } from '../../styles/variables.jsx';
+import { spacing, fontFamily, colors } from '../../styles/variables.jsx';
 import Navbar, { TripTabs } from '../../components/ui/Navbar.jsx';
+
 
 export default function ParticipantPage() {
   const styles = {
-    page: { minHeight: '100vh', fontFamily: fontFamily?.base || 'inherit' },
+    page: { minHeight: '100vh', fontFamily: fontFamily?.base || 'inherit', backgroundColor: colors.accent1 },
     main: { padding: spacing?.lg || 24, maxWidth: '1278px', margin: '0 auto', boxSizing: 'border-box' },
     placeholder: { padding: 32, background: '#fff', borderRadius: 12, boxShadow: '0 6px 18px rgba(8,15,20,0.06)' },
   };
