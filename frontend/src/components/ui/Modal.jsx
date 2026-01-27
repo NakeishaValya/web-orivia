@@ -21,13 +21,16 @@ const Modal = ({ open = false, onClose = () => {}, title = '', children }) => {
     backgroundColor: colors.accent1,
     padding: spacing.xl,
     borderRadius: radius.lg,
-    width: '90%',
-    maxWidth: '600px',
+    width: '95%',
+    maxWidth: '820px',
+    maxHeight: '90vh',
+    overflowY: 'auto',
     color: colors.accent5,
     boxSizing: 'border-box',
   };
 
   const headerStyle = { margin: 0, marginBottom: spacing.lg, fontSize: fontSize.xl };
+  headerStyle.color = colors.accent5;
 
   return (
     <div style={overlayStyle} onClick={onClose} role="dialog" aria-modal="true">
