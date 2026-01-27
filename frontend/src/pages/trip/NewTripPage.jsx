@@ -31,9 +31,9 @@ const DEST_OPTIONS = [
 const NewTripPage = () => {
 	const navigate = useNavigate();
 	const [schedules, setSchedules] = useState([
-		{ id: 1, text: '2026-02-01 - 2026-02-02' },
-		{ id: 2, text: '2026-02-14 - 2026-02-15' },
-		{ id: 3, text: '2026-02-27 - 2026-02-28' }
+		// { id: 1, text: '2026-02-01 - 2026-02-02' },
+		// { id: 2, text: '2026-02-14 - 2026-02-15' },
+		// { id: 3, text: '2026-02-27 - 2026-02-28' }
 	]);
 	
 	const [pickupPoints, setPickupPoints] = useState([
@@ -486,7 +486,7 @@ const NewTripPage = () => {
 						<div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
 							{/* Trip Detail Form */}
 							<TripCard>
-								<SectionTitle>Trip Detail</SectionTitle>
+								<CardHeader>Trip Detail</CardHeader>
 
 								<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing.md, marginBottom: spacing.md }}>
 									<InputField label="Name" type="text" />

@@ -616,12 +616,10 @@ export default function TripEditPage() {
                   onClick={() => openFieldModal('name', tripName)}
                   style={{ width: 32, height: 32, padding: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                 />
-                <SectionTitle style={{ marginBottom: '0px', lineHeight: '32px', height: '32px', display: 'flex', alignItems: 'center' }}>{tripName}</SectionTitle>
+                <SectionTitle style={{ marginBottom: '0px', lineHeight: '32px', height: '32px', display: 'flex', alignItems: 'center', color: colors.accent4, fontWeight: '800px' }}>{tripName}</SectionTitle>
               </div>
               <div style={{ marginBottom: spacing.md }}>
-                <h3 style={{ fontSize: fontSize.base, fontWeight: 600, color: colors.accent5, marginBottom: spacing.sm }}>
-                  Trip Information
-                </h3>
+                <CardHeader>Trip Information</CardHeader>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xs, fontSize: fontSize.sm }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
                     <span style={{ color: colors.text }}>Rp {tripPrice}</span>
