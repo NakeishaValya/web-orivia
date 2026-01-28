@@ -7,7 +7,7 @@ import Button from '../../components/ui/Button.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 
 export default function ParticipantPage() {
-  const passengerSample = Array.from({ length: 8 }).map((_, i) => ({
+  const passengerSample = Array.from({ length: 13 }).map((_, i) => ({
     username: `jekiiiii23${i}`,
     fullname: 'siapa siapa siapa siapa',
     gender: i % 2 === 0 ? 'Male' : 'Female',
@@ -125,6 +125,12 @@ export default function ParticipantPage() {
   const passengerCard = { backgroundColor: colors.bg, color: colors.text, borderRadius: radius.md, padding: spacing.lg, boxShadow: '0 6px 18px rgba(8,15,20,0.06)' };
   const passengerTableStyle = { ...tableStyle, color: colors.text, wordBreak: 'break-word' };
   const gridStyle = { display: 'grid', gridTemplateColumns: '380px 1fr', gap: spacing.lg, marginTop: spacing.lg };
+  // Ensure passenger card stretches to match left column height and table scrolls
+  passengerCard.display = 'flex';
+  passengerCard.flexDirection = 'column';
+  passengerCard.flex = 1;
+  tableWrap.flex = 1;
+  tableWrap.overflowY = 'auto';
 
   return (
     <div style={page}>
@@ -242,12 +248,12 @@ export default function ParticipantPage() {
             </div>
           </div>
 
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <div style={passengerCard}>
               <h3 style={{ marginTop: 0, marginBottom: spacing.sm, color: colors.accent5 }}>Passenger List</h3>
-              <div style={tableWrap}>
+              <div style={{ ...tableWrap, minHeight: '420px', maxHeight: passengerSample.length > 10 ? '420px' : undefined }}>
                 <table style={passengerTableStyle}>
-                  <thead>
+                  <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                     <tr style={{ textAlign: 'center', borderBottom: `1px solid ${colors.accent5}22`, backgroundColor: colors.accent5 }}>
                       <th style={{ padding: spacing.sm, color: colors.bg, width: '11%', textAlign: 'center' }}>Username</th>
                       <th style={{ padding: spacing.sm, color: colors.bg, width: '27%', textAlign: 'center' }}>Full Name</th>

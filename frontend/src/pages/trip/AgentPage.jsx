@@ -92,6 +92,10 @@ export default function AgentTripPage() {
       maxWidth: '1326px',
       boxSizing: 'border-box',
       margin: '0 auto',
+      display: 'flex',
+      flexDirection: 'column',
+      height: 'calc(100vh - 72px)',
+      overflow: 'hidden',
     },
     header: {
       display: 'flex',
@@ -117,9 +121,10 @@ export default function AgentTripPage() {
     },
     grid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(4, 306px)',
+      gridTemplateColumns: 'repeat(4, minmax(220px, 1fr))',
       gap: 18,
-      justifyContent: 'center',
+      width: '100%',
+      boxSizing: 'border-box',
     },
     card: {
       position: 'relative',
@@ -201,12 +206,13 @@ export default function AgentTripPage() {
               onClick={() => navigate('/trip/new')}
             >
               <FontAwesomeIcon icon={faPlus} />
-              <span style={{ fontWeight: 500 }}>Add New Trip</span>
+              <span style={{ fontWeight: 500, fontFamily: fontFamily.base }}>Add New Trip</span>
             </Button>
           </div>
         </div>
 
-        <section style={styles.grid}>
+        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', paddingRight: 8 }}>
+          <section style={{ ...styles.grid, width: '100%', overflow: 'hidden' }}>
           {dummyTrips.map((trip, idx) => (
             <StyledTripCard
               key={idx}
@@ -219,7 +225,8 @@ export default function AgentTripPage() {
               onClick={trip.title === '2D3N - Banda Neira' ? () => navigate('/trip/edit') : undefined}
             />
           ))}
-        </section>
+          </section>
+        </div>
       </main>
     </div>
   );

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUpload, faTrash, faPencil, faPlus, faCheck, faXmark, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import Navbar from '../../components/ui/Navbar';
-import Modal from '../../components/ui/Modal';
+import Modal, { modalStyles } from '../../components/ui/Modal';
 import Button from '../../components/ui/Button';
 import { 
 	TripCard, 
@@ -96,14 +96,17 @@ const NewTripPage = () => {
 		});
 	};
 
-	const [tripDays, setTripDays] = useState(1);
+	const [tripDays, setTripDays] = useState('');
+	const [tripPrice, setTripPrice] = useState('');
+	const [tripNights, setTripNights] = useState('');
+	const [description, setDescription] = useState('');
 	const [destType, setDestType] = useState('');
 	const [destTypeCustom, setDestTypeCustom] = useState('');
 
+	const makeEmptyRows = (count = 3) => Array.from({ length: count }, (_, i) => ({ id: i + 1, time: '', duration: '', activity: '', location: '' }));
+
 	const [tripPlanner, setTripPlanner] = useState({
-		1: [
-			{ id: 1, time: '', duration: '', activity: '', location: '' }
-		]
+		1: makeEmptyRows(3)
 	});
 	const [openDay, setOpenDay] = useState(1);
 
@@ -272,9 +275,10 @@ const NewTripPage = () => {
 			return;
 		}
 		const newId = Math.max(...pickupPoints.map(p => p.id)) + 1;
+		const formatted = formatRupiah(newPickupPrice.trim());
 		setPickupPoints([
 			...pickupPoints,
-			{ id: newId, price: newPickupPrice.trim(), location: newPickupLocation.trim(), checked: false }
+			{ id: newId, price: formatted, location: newPickupLocation.trim(), checked: false }
 		]);
 		setNewPickupPrice('');
 		setNewPickupLocation('');
@@ -299,8 +303,9 @@ const NewTripPage = () => {
 				setEditPickupError('Harga harus berupa integer (hanya angka).');
 				return;
 			}
+			const formatted = formatRupiah(editingPickup.price.trim());
 			setPickupPoints(pickupPoints.map(p => 
-				p.id === editingPickup.id ? { ...editingPickup, price: editingPickup.price.trim(), location: editingPickup.location.trim() } : p
+				p.id === editingPickup.id ? { ...editingPickup, price: formatted, location: editingPickup.location.trim() } : p
 			));
 			setShowEditPickupModal(false);
 			setEditingPickup(null);
@@ -311,16 +316,33 @@ const NewTripPage = () => {
 	};
 
 	const handleDayInputChange = (value) => {
-		const days = parseInt(value) || 1;
+		const parsed = parseInt(value);
+		let days = Number.isNaN(parsed) ? 1 : parsed;
+		if (days < 1) days = 1;
 		setTripDays(days);
-		
+
+		// ensure planner has keys 1..days and trim extras
 		const newPlanner = { ...tripPlanner };
 		for (let i = 1; i <= days; i++) {
-			if (!newPlanner[i]) {
-				newPlanner[i] = [{ id: 1, time: '', duration: '', activity: '', location: '' }];
-			}
+			if (!newPlanner[i]) newPlanner[i] = makeEmptyRows(3);
 		}
+		Object.keys(newPlanner).forEach(k => {
+			const n = parseInt(k);
+			if (!Number.isNaN(n) && n > days) delete newPlanner[k];
+		});
 		setTripPlanner(newPlanner);
+	};
+
+	const handleNightInputChange = (value) => {
+		const parsed = parseInt(value);
+		let nights = Number.isNaN(parsed) ? 0 : parsed;
+		if (nights < 0) nights = 0;
+		setTripNights(nights);
+	};
+
+	const handleDescriptionChange = (value) => {
+		if (value.length <= 400) setDescription(value);
+		else setDescription(value.slice(0, 400));
 	};
 
 	const handleAddActivity = (day) => {
@@ -365,6 +387,13 @@ const NewTripPage = () => {
 		const m = text.match(/(\d{4}-\d{2}-\d{2})\s*-\s*(\d{4}-\d{2}-\d{2})/);
 		if (m) return `${formatISODate(m[1])} - ${formatISODate(m[2])}`;
 		return text;
+	};
+
+	const formatRupiah = (val) => {
+		if (val == null) return '';
+		const s = String(val).replace(/\D/g, '');
+		if (!s) return '';
+		return s.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 	};
 
 	const filledCount = imagePreviews.filter(Boolean).length;
@@ -444,40 +473,45 @@ const NewTripPage = () => {
 							{/* Schedule Section */}
 							<TripCard>
 								<CardHeader>Schedule</CardHeader>
-								<div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
-									{schedules.map((schedule) => (
-										<div
-											key={schedule.id}
-											style={{
-												display: 'flex',
-												justifyContent: 'space-between',
-												alignItems: 'center',
-												padding: '8px 0',
-											}}
-										>
-													<span style={{ fontSize: fontSize.base }}>{formatDateRange(schedule.text)}</span>
-											<div style={{ display: 'flex', gap: spacing.xs }}>
-											<IconButton icon={<FontAwesomeIcon icon={faPencil} />} onClick={() => handleEditSchedule(schedule)} />
-											<IconButton icon={<FontAwesomeIcon icon={faTrash} />} onClick={() => handleDeleteSchedule(schedule.id)} />
+								<div style={{ display: 'flex', flexDirection: 'column', height: '270px' }}>
+									<div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: spacing.sm, overflowY: 'auto', paddingRight: spacing.sm }}>
+										{schedules.map((schedule) => (
+											<div
+												key={schedule.id}
+												style={{
+													display: 'flex',
+													justifyContent: 'space-between',
+													alignItems: 'center',
+													padding: '8px 0',
+												}}
+											>
+												<span style={{ fontSize: fontSize.base }}>{formatDateRange(schedule.text)}</span>
+												<div style={{ display: 'flex', gap: spacing.xs }}>
+													<IconButton icon={<FontAwesomeIcon icon={faPencil} />} onClick={() => handleEditSchedule(schedule)} />
+													<IconButton icon={<FontAwesomeIcon icon={faTrash} />} onClick={() => handleDeleteSchedule(schedule.id)} />
+												</div>
 											</div>
-										</div>
-									))}
-								</div>
-
-								{/* Add Schedule */}
-								<div style={{ marginTop: spacing.md }}>
-									<div style={{ display: 'flex', gap: spacing.sm, alignItems: 'end' }}>
-										<div style={{ flex: 1 }}>
-											<InputField label="Start Date" type="date" value={newScheduleStartDate} onChange={(e) => { setNewScheduleStartDate(e.target.value); setScheduleError(''); }} />
-										</div>
-										<div style={{ flex: 1 }}>
-											<InputField label="End Date" type="date" value={newScheduleEndDate} onChange={(e) => { setNewScheduleEndDate(e.target.value); setScheduleError(''); }} />
-										</div>
-										<AddButton onClick={handleAddSchedule} />
+										))}
 									</div>
-									{scheduleError && (
-										<div style={{ color: colors.error, marginTop: spacing.sm, fontSize: fontSize.sm }}>{scheduleError}</div>
-									)}
+
+									{/* Add Schedule (fixed area) */}
+									<div style={{ padding: spacing.md, borderTop: `1px solid ${colors.accent5}20`, backgroundColor: colors.bg }}>
+										<div style={{ display: 'flex', gap: spacing.sm, alignItems: 'end' }}>
+											<div style={{ flex: 1 }}>
+												<InputField label="Start Date" type="date" value={newScheduleStartDate} onChange={(e) => { setNewScheduleStartDate(e.target.value); setScheduleError(''); }} />
+											</div>
+											<div style={{ flex: 1 }}>
+												<InputField label="End Date" type="date" value={newScheduleEndDate} onChange={(e) => { setNewScheduleEndDate(e.target.value); setScheduleError(''); }} />
+											</div>
+											<AddButton onClick={handleAddSchedule} />
+										</div>
+										<div style={{ height: spacing.sm }} />
+										<div style={{ minHeight: fontSize.sm, lineHeight: 1, color: colors.error }}>
+											{scheduleError && (
+												<div style={{ color: colors.error, fontSize: fontSize.sm }}>{scheduleError}</div>
+											)}
+										</div>
+									</div>
 								</div>
 							</TripCard>
 						</div>
@@ -501,17 +535,31 @@ const NewTripPage = () => {
 								<div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr', gap: spacing.md, marginBottom: spacing.md }}>
 									<InputField label="Slot" type="number" />
 									<div>
-										<label style={{ display: 'block', marginBottom: '6px', fontSize: fontSize.sm, color: colors.text, fontWeight: 500 }}>
-											Duration
-										</label>
+										<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+											<label style={{ fontSize: fontSize.sm, color: colors.text, fontWeight: 500, margin: 0 }}>
+												Duration
+											</label>
+										</div>
 										<div style={{ display: 'flex', gap: spacing.sm }}>
-											<InputField 
-												placeholder="Day" 
-												type="number" 
-												value={tripDays}
-												onChange={(e) => handleDayInputChange(e.target.value)}
-											/>
-											<InputField placeholder="Night" type="number" />
+											<div style={{ flex: 1 }}>
+												<InputField
+													placeholder="Day"
+													type="number"
+													value={tripDays}
+													min={1}
+													onChange={(e) => handleDayInputChange(e.target.value)}
+												/>
+											</div>
+
+											<div style={{ flex: 1 }}>
+												<InputField
+													placeholder="Night"
+													type="number"
+														value={tripNights}
+														min={0}
+													onChange={(e) => handleNightInputChange(e.target.value)}
+												/>
+											</div>
 										</div>
 									</div>
 									<div>
@@ -533,20 +581,25 @@ const NewTripPage = () => {
 									</div>
 								</div>
 
-								<div style={{ marginBottom: spacing.md }}>
+								<div style={{ marginBottom: '0px'}}>
 									<InputField 
 										label="Description" 
 										type="textarea" 
 										rows={4} 
-										style={{ resize: 'vertical', minHeight: '80px' }} 
+										value={description}
+										onChange={(e) => handleDescriptionChange(e.target.value)}
+										style={{ resize: 'vertical', minHeight: '99.60px', fontSize: fontSize.xs, lineHeight: '1.25', padding: '8px 12px' }} 
 									/>
+									<div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: spacing.xs, fontSize: fontSize.xs, color: '#6b7280' }}>
+										{description.length}/400
+									</div>
 								</div>
 							</TripCard>
 
 							{/* Pick Up Point Section */}
 							<TripCard>
 								<CardHeader>Pick Up Point</CardHeader>
-								<div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
+								<div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm, maxHeight: '90px', overflowY: 'auto', paddingRight: spacing.sm }}>
 									{pickupPoints.map((point) => (
 										<div
 											key={point.id}
@@ -571,7 +624,7 @@ const NewTripPage = () => {
 													style={{ width: 16, height: 16, cursor: 'pointer' }}
 												/>
 												<span style={{ fontSize: fontSize.sm }}>
-														<span style={{ color: colors.accent3, fontWeight: 600 }}>[{point.price}]</span>{' '}
+													<span style={{ color: colors.accent3, fontWeight: 600 }}>[Rp {formatRupiah(point.price)}]</span>{' '}
 													{point.location}
 												</span>
 											</label>
@@ -588,7 +641,7 @@ const NewTripPage = () => {
 							{/* Include Section */}
 							<TripCard>
 								<CardHeader>Include</CardHeader>
-								<div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
+								<div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm, maxHeight: '140px', overflowY: 'auto', paddingRight: spacing.sm }}>
 									{includes.map((item) => (
 										<div
 											key={item.id}
@@ -650,106 +703,109 @@ const NewTripPage = () => {
 							<div style={{
 								backgroundColor: colors.bg,
 								borderRadius: radius.md,
-								overflow: 'hidden',
-								border: `1px solid ${colors.accent5}20`
+								border: `1px solid ${colors.accent5}20`,
+								overflow: 'hidden'
 							}}>
-								<table style={{ width: '100%', borderCollapse: 'collapse' }}>
-									<thead>
-										<tr style={{ backgroundColor: colors.accent5 }}>
-											<th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}`}}>Time</th>
-											<th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}` }}>Duration (hrs)</th>
-											<th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}` }}>Activity</th>
-											<th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}` }}>Location</th>
-											<th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}` }}>Action</th>
-										</tr>
-									</thead>
-									<tbody>
-										{(tripPlanner[openDay] || []).map((activity) => (
-											<tr key={activity.id} style={{borderBottom: `1px solid ${colors.accent4}`}}>
-												<td style={{ padding: spacing.sm }}>
-													<input
-														type="text"
-														value={activity.time}
-														onChange={(e) => handleActivityChange(openDay, activity.id, 'time', e.target.value)}
-														placeholder="06.00 - 07.00"
-														style={{
-															width: '100%',
-															padding: spacing.sm,
-															border: '1px solid #D4C4A8',
-															borderRadius: radius.sm,
-															backgroundColor: '#F9F5EE',
-															fontSize: fontSize.sm,
-															outline: 'none'
-														}}
-													/>
-												</td>
-												<td style={{ padding: spacing.sm }}>
-													<input
-														type="number"
-														value={activity.duration}
-														onChange={(e) => handleActivityChange(openDay, activity.id, 'duration', e.target.value)}
-														placeholder="1"
-														style={{
-															width: '100%',
-															padding: spacing.sm,
-															border: '1px solid #D4C4A8',
-															borderRadius: radius.sm,
-															backgroundColor: '#F9F5EE',
-															fontSize: fontSize.sm,
-															outline: 'none'
-															}}
-													/>
-												</td>
-												<td style={{ padding: spacing.sm }}>
-													<input
-														type="text"
-														value={activity.activity}
-														onChange={(e) => handleActivityChange(openDay, activity.id, 'activity', e.target.value)}
-														placeholder="Meeting point & briefing"
-														style={{
-															width: '100%',
-															padding: spacing.sm,
-															border: '1px solid #D4C4A8',
-															borderRadius: radius.sm,
-															backgroundColor: '#F9F5EE',
-															fontSize: fontSize.sm,
-															outline: 'none'
-															}}
-													/>
-												</td>
-												<td style={{ padding: spacing.sm }}>
-													<input
-														type="text"
-														value={activity.location}
-														onChange={(e) => handleActivityChange(openDay, activity.id, 'location', e.target.value)}
-														placeholder="Bandar Udara Komodo"
-														style={{
-															width: '100%',
-															padding: spacing.sm,
-															border: '1px solid #D4C4A8',
-															borderRadius: radius.sm,
-															backgroundColor: '#F9F5EE',
-															fontSize: fontSize.sm,
-															outline: 'none'
-															}}
-													/>
-												</td>
-												<td style={{ padding: spacing.sm }}>
-													<div style={{ display: 'flex', gap: spacing.xs, justifyContent: 'center', alignItems: 'center' }}>
-														<IconButton 
-															icon={<FontAwesomeIcon icon={faTrash} />}
-															onClick={() => handleDeleteActivity(openDay, activity.id)}
-															style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, padding: 0 }}
-														/>
-													</div>
-												</td>
+								{/* Table with scrollable body: fixed height for 3 rows; show scrollbar when >=4 rows */}
+								<div style={{ height: '313.8px', minHeight: '313.8px', overflowY: (tripPlanner[openDay] || []).length >= 4 ? 'scroll' : 'auto', position: 'relative' }}>
+									<table style={{ width: '100%', borderCollapse: 'collapse' }}>
+										<thead style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: colors.accent5 }}>
+											<tr>
+												<th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}`, width: '12%' }}>Time</th>
+												<th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}`, width: '8%' }}>Duration (hrs)</th>
+												<th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}`, width: '40%' }}>Activity</th>
+												<th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}`, width: '30%' }}>Location</th>
+												<th style={{ padding: spacing.md, textAlign: 'center', fontWeight: 600, fontSize: fontSize.sm, color: colors.bg, borderBottom: `3px solid ${colors.accent4}`, width: '10%' }}>Action</th>
 											</tr>
-										))}
-									</tbody>
-								</table>
+										</thead>
+										<tbody>
+											{(tripPlanner[openDay] || []).map((activity) => (
+												<tr key={activity.id} style={{borderBottom: `1px solid ${colors.accent4}`}}>
+													<td style={{ padding: spacing.sm, width: '12%' }}>
+														<input
+															type="text"
+															value={activity.time}
+															onChange={(e) => handleActivityChange(openDay, activity.id, 'time', e.target.value)}
+															placeholder="06.00 - 07.00"
+															style={{
+																width: '100%',
+																padding: spacing.sm,
+																border: '1px solid #D4C4A8',
+																borderRadius: radius.sm,
+																backgroundColor: '#F9F5EE',
+																fontSize: fontSize.sm,
+																outline: 'none'
+															}}
+														/>
+													</td>
+													<td style={{ padding: spacing.sm, width: '8%' }}>
+														<input
+															type="number"
+															value={activity.duration}
+															onChange={(e) => handleActivityChange(openDay, activity.id, 'duration', e.target.value)}
+															placeholder="1"
+															style={{
+																width: '100%',
+																padding: spacing.sm,
+																border: '1px solid #D4C4A8',
+																borderRadius: radius.sm,
+																backgroundColor: '#F9F5EE',
+																fontSize: fontSize.sm,
+																outline: 'none'
+															}}
+														/>
+													</td>
+													<td style={{ padding: spacing.sm, width: '40%' }}>
+														<input
+															type="text"
+															value={activity.activity}
+															onChange={(e) => handleActivityChange(openDay, activity.id, 'activity', e.target.value)}
+															placeholder="Meeting point & briefing"
+															style={{
+																width: '100%',
+																padding: spacing.sm,
+																border: '1px solid #D4C4A8',
+																borderRadius: radius.sm,
+																backgroundColor: '#F9F5EE',
+																fontSize: fontSize.sm,
+																outline: 'none'
+															}}
+														/>
+													</td>
+													<td style={{ padding: spacing.sm, width: '30%' }}>
+														<input
+															type="text"
+															value={activity.location}
+															onChange={(e) => handleActivityChange(openDay, activity.id, 'location', e.target.value)}
+															placeholder="Bandar Udara Komodo"
+															style={{
+																width: '100%',
+																padding: spacing.sm,
+																border: '1px solid #D4C4A8',
+																borderRadius: radius.sm,
+																backgroundColor: '#F9F5EE',
+																fontSize: fontSize.sm,
+																outline: 'none'
+															}}
+														/>
+													</td>
+													<td style={{ padding: spacing.sm, width: '10%' }}>
+														<div style={{ display: 'flex', gap: spacing.xs, justifyContent: 'center', alignItems: 'center' }}>
+															<IconButton 
+																icon={<FontAwesomeIcon icon={faTrash} />}
+																onClick={() => handleDeleteActivity(openDay, activity.id)}
+																style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, padding: 0 }}
+															/>
+														</div>
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
 
-								{/* Add New Activity Button */}
-								<div style={{ padding: spacing.md, textAlign: 'center', borderTop: '1px solid #E8D4B8' }}>
+								{/* Fixed Add New Activity Button */}
+								<div style={{ padding: spacing.md, textAlign: 'center', borderTop: '1px solid #E8D4B8', backgroundColor: colors.bg }}>
 									<button
 										onClick={() => handleAddActivity(openDay)}
 										style={{
@@ -765,7 +821,7 @@ const NewTripPage = () => {
 											justifyContent: 'center',
 											fontSize: fontSize.lg,
 											margin: '0 auto'
-											}}
+										}}
 									>
 										<FontAwesomeIcon icon={faPlus} />
 									</button>
@@ -781,36 +837,29 @@ const NewTripPage = () => {
 						</div>
 					</div>
 				</div>
-		</div>
+			</div>
 
-						{/* Modal for Add Custom Include */}
+			{/* Modal for Add Custom Include */}
 						{showIncludeModal && (
-							<Modal open={showIncludeModal} onClose={() => { setShowIncludeModal(false); setNewIncludeName(''); }} title="Add Custom Include">
-								<div style={{ marginBottom: spacing.lg }}>
-									<label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Include Name</label>
+							<Modal open={showIncludeModal} onClose={() => { setShowIncludleModal(false); setNewIncludeName(''); }} title="Add Custom Include">
+								<div style={modalStyles.formGroup}>
+									<label style={modalStyles.label}>Include Name</label>
 									<input
 										type="text"
 										value={newIncludeName}
 										onChange={(e) => { setNewIncludeName(e.target.value); setIncludeError(''); }}
-										style={{
-											width: '100%',
-											padding: spacing.md,
-											border: 'none',
-											borderRadius: radius.md,
-											fontSize: fontSize.base,
-											outline: 'none'
-										}}
+										style={modalStyles.input}
 									/>
 								</div>
 								{includeError && (
-									<div style={{ color: colors.error, marginBottom: spacing.md }}>{includeError}</div>
+									<div style={modalStyles.errorText}>{includeError}</div>
 								)}
 
-								<div style={{ display: 'flex', gap: spacing.md }}>
-									<Button variant="primary" onClick={handleAddInclude} style={{ display: 'inline-flex' }}>
+								<div style={modalStyles.buttonContainer}>
+									<Button variant="btn2" onClick={handleAddInclude} style={{ display: 'inline-flex', gap: spacing.xs }}>
 										<FontAwesomeIcon icon={faCheck} /> Confirm
 									</Button>
-									<Button variant="primary" onClick={() => { setShowIncludeModal(false); setNewIncludeName(''); }} style={{ display: 'inline-flex' }}>
+									<Button variant="btn3" onClick={() => { setShowIncludeModal(false); setNewIncludeName(''); }} style={{ display: 'inline-flex', gap: spacing.xs }}>
 										<FontAwesomeIcon icon={faXmark} /> Cancel
 									</Button>
 								</div>
@@ -820,48 +869,34 @@ const NewTripPage = () => {
 						{/* Modal for Edit Schedule */}
 						{showEditScheduleModal && (
 							<Modal open={showEditScheduleModal} onClose={() => { setShowEditScheduleModal(false); setEditingSchedule(null); }} title="Edit Schedule">
-								<div style={{ marginBottom: spacing.md }}>
-									<label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Start Date</label>
+								<div style={modalStyles.formGroupMd}>
+									<label style={modalStyles.label}>Start Date</label>
 									<input
 										type="date"
 										value={editScheduleStartDate}
 										onChange={(e) => { setEditScheduleStartDate(e.target.value); setEditScheduleError(''); }}
-										style={{
-											width: '100%',
-											padding: spacing.md,
-											border: 'none',
-											borderRadius: radius.md,
-											fontSize: fontSize.base,
-											outline: 'none'
-										}}
+										style={modalStyles.input}
 									/>
 								</div>
 
-								<div style={{ marginBottom: spacing.lg }}>
-									<label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>End Date</label>
+								<div style={modalStyles.formGroup}>
+									<label style={modalStyles.label}>End Date</label>
 									<input
 										type="date"
 										value={editScheduleEndDate}
 										onChange={(e) => { setEditScheduleEndDate(e.target.value); setEditScheduleError(''); }}
-										style={{
-											width: '100%',
-											padding: spacing.md,
-											border: 'none',
-											borderRadius: radius.md,
-											fontSize: fontSize.base,
-											outline: 'none'
-										}}
+										style={modalStyles.input}
 									/>
 								</div>
 								{editScheduleError && (
-									<div style={{ color: colors.error, marginBottom: spacing.md }}>{editScheduleError}</div>
+									<div style={modalStyles.errorText}>{editScheduleError}</div>
 								)}
 
-								<div style={{ display: 'flex', gap: spacing.md }}>
-									<Button variant="primary" onClick={handleSaveEditSchedule} style={{ display: 'inline-flex' }}>
+								<div style={modalStyles.buttonContainer}>
+									<Button variant="btn2" onClick={handleSaveEditSchedule} style={{ display: 'inline-flex', gap: spacing.xs }}>
 										<FontAwesomeIcon icon={faCheck} /> Confirm
 									</Button>
-									<Button variant="primary" onClick={() => { setShowEditScheduleModal(false); setEditingSchedule(null); }} style={{ display: 'inline-flex' }}>
+									<Button variant="btn3" onClick={() => { setShowEditScheduleModal(false); setEditingSchedule(null); }} style={{ display: 'inline-flex', gap: spacing.xs }}>
 										<FontAwesomeIcon icon={faXmark} /> Cancel
 									</Button>
 								</div>
@@ -871,48 +906,34 @@ const NewTripPage = () => {
 						{/* Modal for Edit Pick Up Point */}
 						{showEditPickupModal && editingPickup && (
 							<Modal open={showEditPickupModal} onClose={() => { setShowEditPickupModal(false); setEditingPickup(null); }} title="Edit Pick Up Point">
-								<div style={{ marginBottom: spacing.md }}>
-									<label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Pick Up Point Name</label>
+								<div style={modalStyles.formGroupMd}>
+									<label style={modalStyles.label}>Pick Up Point Name</label>
 									<input
 										type="text"
 										value={editingPickup.location}
 										onChange={(e) => setEditingPickup({ ...editingPickup, location: e.target.value })}
-										style={{
-											width: '100%',
-											padding: spacing.md,
-											border: 'none',
-											borderRadius: radius.md,
-											fontSize: fontSize.base,
-											outline: 'none'
-										}}
+										style={modalStyles.input}
 									/>
 								</div>
 
-								<div style={{ marginBottom: spacing.lg }}>
-									<label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Price</label>
+								<div style={modalStyles.formGroup}>
+									<label style={modalStyles.label}>Price</label>
 									<input
 										type="text"
 										value={editingPickup.price}
 										onChange={(e) => { setEditingPickup({ ...editingPickup, price: e.target.value }); setEditPickupError(''); }}
-										style={{
-											width: '100%',
-											padding: spacing.md,
-											border: 'none',
-											borderRadius: radius.md,
-											fontSize: fontSize.base,
-											outline: 'none'
-										}}
+										style={modalStyles.input}
 									/>
 								</div>
 								{editPickupError && (
-									<div style={{ color: colors.error, marginBottom: spacing.md }}>{editPickupError}</div>
+									<div style={modalStyles.errorText}>{editPickupError}</div>
 								)}
 
-								<div style={{ display: 'flex', gap: spacing.md }}>
-									<Button variant="primary" onClick={handleSaveEditPickupPoint} style={{ display: 'inline-flex' }}>
+								<div style={modalStyles.buttonContainer}>
+									<Button variant="btn2" onClick={handleSaveEditPickupPoint} style={{ display: 'inline-flex', gap: spacing.xs }}>
 										<FontAwesomeIcon icon={faCheck} /> Confirm
 									</Button>
-									<Button variant="primary" onClick={() => { setShowEditPickupModal(false); setEditingPickup(null); }} style={{ display: 'inline-flex' }}>
+									<Button variant="btn3" onClick={() => { setShowEditPickupModal(false); setEditingPickup(null); }} style={{ display: 'inline-flex', gap: spacing.xs }}>
 										<FontAwesomeIcon icon={faXmark} /> Cancel
 									</Button>
 								</div>
@@ -922,31 +943,24 @@ const NewTripPage = () => {
 						{/* Modal for Edit Include */}
 						{showEditIncludeModal && editingInclude && (
 							<Modal open={showEditIncludeModal} onClose={() => { setShowEditIncludeModal(false); setEditingInclude(null); }} title="Edit Include">
-								<div style={{ marginBottom: spacing.lg }}>
-									<label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Include Name</label>
+								<div style={modalStyles.formGroup}>
+									<label style={modalStyles.label}>Include Name</label>
 									<input
 										type="text"
 										value={editingInclude.name}
 										onChange={(e) => { setEditingInclude({ ...editingInclude, name: e.target.value }); setEditIncludeError(''); }}
-										style={{
-											width: '100%',
-											padding: spacing.md,
-											border: 'none',
-											borderRadius: radius.md,
-											fontSize: fontSize.base,
-											outline: 'none'
-										}}
+										style={modalStyles.input}
 									/>
 								</div>
 								{editIncludeError && (
-									<div style={{ color: colors.error, marginBottom: spacing.md }}>{editIncludeError}</div>
+									<div style={modalStyles.errorText}>{editIncludeError}</div>
 								)}
 
-								<div style={{ display: 'flex', gap: spacing.md }}>
-									<Button variant="primary" onClick={handleSaveEditInclude} style={{ display: 'inline-flex' }}>
+								<div style={modalStyles.buttonContainer}>
+									<Button variant="btn2" onClick={handleSaveEditInclude} style={{ display: 'inline-flex', gap: spacing.xs }}>
 										<FontAwesomeIcon icon={faCheck} /> Confirm
 									</Button>
-									<Button variant="primary" onClick={() => { setShowEditIncludeModal(false); setEditingInclude(null); }} style={{ display: 'inline-flex' }}>
+									<Button variant="btn3" onClick={() => { setShowEditIncludeModal(false); setEditingInclude(null); }} style={{ display: 'inline-flex', gap: spacing.xs }}>
 										<FontAwesomeIcon icon={faXmark} /> Cancel
 									</Button>
 								</div>
@@ -956,54 +970,40 @@ const NewTripPage = () => {
 						{/* Modal for Add Custom Pick Up Point */}
 						{showPickupModal && (
 							<Modal open={showPickupModal} onClose={() => { setShowPickupModal(false); setNewPickupPrice(''); setNewPickupLocation(''); }} title="Add Custom Pick Up Point">
-								<div style={{ marginBottom: spacing.md }}>
-									<label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Pick Up Point Name</label>
+								<div style={modalStyles.formGroupMd}>
+									<label style={modalStyles.label}>Pick Up Point Name</label>
 									<input
 										type="text"
 										value={newPickupLocation}
 										onChange={(e) => { setNewPickupLocation(e.target.value); setPickupError(''); }}
-										style={{
-											width: '100%',
-											padding: spacing.md,
-											border: 'none',
-											borderRadius: radius.md,
-											fontSize: fontSize.base,
-											outline: 'none'
-										}}
+										style={modalStyles.input}
 									/>
 								</div>
 
-								<div style={{ marginBottom: spacing.lg }}>
-									<label style={{ display: 'block', marginBottom: spacing.sm, fontWeight: 500 }}>Price</label>
+								<div style={modalStyles.formGroup}>
+									<label style={modalStyles.label}>Price</label>
 									<input
 										type="text"
 										value={newPickupPrice}
 										onChange={(e) => { setNewPickupPrice(e.target.value); setPickupError(''); }}
-										style={{
-											width: '100%',
-											padding: spacing.md,
-											border: 'none',
-											borderRadius: radius.md,
-											fontSize: fontSize.base,
-											outline: 'none'
-										}}
+										style={modalStyles.input}
 									/>
 								</div>
 								{pickupError && (
-									<div style={{ color: colors.error, marginBottom: spacing.md }}>{pickupError}</div>
+									<div style={modalStyles.errorText}>{pickupError}</div>
 								)}
 
-								<div style={{ display: 'flex', gap: spacing.md }}>
-									<Button variant="primary" onClick={handleAddPickupPoint} style={{ display: 'inline-flex' }}>
+								<div style={modalStyles.buttonContainer}>
+									<Button variant="btn2" onClick={handleAddPickupPoint} style={{ display: 'inline-flex', gap: spacing.xs }}>
 										<FontAwesomeIcon icon={faCheck} /> Confirm
 									</Button>
-									<Button variant="primary" onClick={() => { setShowPickupModal(false); setNewPickupPrice(''); setNewPickupLocation(''); }} style={{ display: 'inline-flex' }}>
+									<Button variant="btn3" onClick={() => { setShowPickupModal(false); setNewPickupPrice(''); setNewPickupLocation(''); }} style={{ display: 'inline-flex', gap: spacing.xs }}>
 										<FontAwesomeIcon icon={faXmark} /> Cancel
 									</Button>
 								</div>
 							</Modal>
 						)}
-		</>
+			</>
 	);
 };
 
