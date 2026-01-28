@@ -44,4 +44,41 @@ const Modal = ({ open = false, onClose = () => {}, title = '', children }) => {
   );
 };
 
+// Export common modal content styles
+export const modalStyles = {
+  formGroup: {
+    marginBottom: spacing.lg,
+  },
+  formGroupMd: {
+    marginBottom: spacing.md,
+  },
+  label: {
+    display: 'block',
+    marginBottom: spacing.sm,
+    fontWeight: 500,
+  },
+  input: {
+    width: '100%',
+    padding: spacing.md,
+    border: 'none',
+    borderRadius: radius.md,
+    fontSize: fontSize.base,
+    outline: 'none',
+  },
+  errorText: {
+    color: colors.error,
+    marginBottom: spacing.md,
+  },
+  buttonContainer: {
+    display: 'flex',
+    gap: spacing.sm,
+  },
+  gridTwoColumns: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+};
+
 export default Modal;
