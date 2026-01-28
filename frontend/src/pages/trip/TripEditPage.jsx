@@ -5,6 +5,9 @@ import { faUpload, faTrash, faPencil, faPlus, faCheck, faXmark } from '@fortawes
 import Navbar, { TripTabs } from '../../components/ui/Navbar.jsx';
 import Modal, { modalStyles } from '../../components/ui/Modal';
 import Button from '../../components/ui/Button';
+import extendAgentBg from '../../assets/images/extendagentbg.jpg';
+import { colors, spacing, radius, fontSize, fontFamily } from '../../styles/variables';
+
 import { 
   TripCard, 
   ImageUploadCard, 
@@ -17,7 +20,6 @@ import {
   ImagePreview, 
   TextLink 
 } from '../../components/ui/Card';
-import { colors, spacing, radius, fontSize } from '../../styles/variables';
 
 const DEST_OPTIONS = [
   'Island Exploration',
@@ -472,6 +474,10 @@ export default function TripEditPage() {
   const pageStyle = {
     minHeight: '100vh',
     backgroundColor: colors.accent1,
+    backgroundImage: `url(${extendAgentBg})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center top',
+    backgroundRepeat: 'no-repeat',
     fontFamily: 'Inter, system-ui, -apple-system',
   };
 
@@ -491,7 +497,7 @@ export default function TripEditPage() {
   if (isParticipant) {
     return (
       <div style={pageStyle}>
-        <Navbar />
+        <Navbar style={{ position: 'sticky', top: 0, left: 0, right: 0, zIndex: 60, backgroundColor: '#FBFBF9' }} />
         <div style={containerStyle}>
           <TripTabs />
           <div style={{
@@ -511,7 +517,7 @@ export default function TripEditPage() {
 
   return (<>
     <div style={pageStyle}>
-      <Navbar />
+      <Navbar style={{ position: 'sticky', top: 0, left: 0, right: 0, zIndex: 60, backgroundColor: colors.bg }} />
       <div style={containerStyle}>
         <TripTabs />
         
@@ -760,12 +766,12 @@ export default function TripEditPage() {
 
         {/* Trip Planner Section */}
         <div style={{ marginTop: spacing.xl }}>
-          <h2 style={{ fontSize: fontSize.xl, fontWeight: 1000, color: colors.accent5, marginBottom: spacing.lg }}>
+          <h2 style={{ fontSize: fontSize.xl, fontWeight: 1000, color: colors.accent1, marginBottom: spacing.lg }}>
             Trip Planner
           </h2>
           
           <div style={{ display: 'flex', gap: spacing.md, alignItems: 'center', marginBottom: spacing.md }}>
-            <label style={{ fontWeight: 600, color: colors.text }}>Day</label>
+            <label style={{ fontWeight: 600, color: colors.bg, fontFamily: fontFamily.base }}>Day</label>
             <select
               value={openDay}
               onChange={(e) => setOpenDay(parseInt(e.target.value))}
@@ -912,7 +918,8 @@ export default function TripEditPage() {
           {/* Keep Trip Button */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: spacing.lg }}>
             <Button variant="primary" style={{ minWidth: '200px', padding: `${spacing.md} ${spacing.xl}` }}>
-              <FontAwesomeIcon icon={faCheck} /> Keep Trip
+              <FontAwesomeIcon icon={faCheck} style={{ marginRight: spacing.xs }} />
+              <span style={{ fontWeight: 700, fontFamily: fontFamily.base}}>Save Trip</span>
             </Button>
           </div>
         </div>

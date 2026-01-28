@@ -5,6 +5,8 @@ import { spacing, fontFamily, colors, radius, fontSize } from '../../styles/vari
 import Navbar, { TripTabs } from '../../components/ui/Navbar.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Modal from '../../components/ui/Modal.jsx';
+import extendAgentBg from '../../assets/images/extendagentbg.jpg';
+
 
 export default function ParticipantPage() {
   const passengerSample = Array.from({ length: 13 }).map((_, i) => ({
@@ -75,6 +77,10 @@ export default function ParticipantPage() {
     minHeight: '100vh',
     fontFamily: fontFamily?.base || 'Inter, system-ui, -apple-system',
     backgroundColor: colors.accent1,
+    backgroundImage: `url(${extendAgentBg})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center top',
+    backgroundRepeat: 'no-repeat',
     paddingBottom: spacing.xl
   };
 
@@ -134,7 +140,7 @@ export default function ParticipantPage() {
 
   return (
     <div style={page}>
-      <Navbar style={{ background: 'transparent' }} />
+      <Navbar style={{ position: 'sticky', top: 0, left: 0, right: 0, zIndex: 60, backgroundColor: colors.bg }} />
       <main style={container}>
         <TripTabs />
 

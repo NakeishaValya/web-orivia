@@ -6,6 +6,9 @@ import { faUpload, faTrash, faPencil, faPlus, faCheck, faXmark, faChevronDown } 
 import Navbar from '../../components/ui/Navbar';
 import Modal, { modalStyles } from '../../components/ui/Modal';
 import Button from '../../components/ui/Button';
+import extendAgentBg from '../../assets/images/extendagentbg.jpg';
+import { colors, spacing, radius, fontSize, fontFamily } from '../../styles/variables';
+
 import { 
 	TripCard, 
 	ImageUploadCard, 
@@ -18,7 +21,6 @@ import {
 	ImagePreview, 
 	TextLink 
 } from '../../components/ui/Card';
-import { colors, spacing, radius, fontSize } from '../../styles/variables';
 
 const DEST_OPTIONS = [
 	'Island Exploration',
@@ -54,6 +56,7 @@ const NewTripPage = () => {
 		{ id: 9, name: 'Accomodation', checked: false }
 	]);
 
+	
 	const [imagePreviews, setImagePreviews] = useState([null, null, null, null]);
 	const fileInputRef = useRef(null);
 
@@ -397,7 +400,16 @@ const NewTripPage = () => {
 	};
 
 	const filledCount = imagePreviews.filter(Boolean).length;
-
+	const page = {
+		minHeight: '100vh',
+		fontFamily: fontFamily?.base || 'Inter, system-ui, -apple-system',
+		backgroundColor: colors.accent1,
+		backgroundImage: `url(${extendAgentBg})`,
+		backgroundSize: 'cover',
+		backgroundPosition: 'center top',
+		backgroundRepeat: 'no-repeat',
+		paddingBottom: spacing.xl
+	};
 	const pageStyle = {
 		minHeight: '100vh',
 		backgroundColor: colors.accent1,
@@ -418,8 +430,8 @@ const NewTripPage = () => {
 	};
 
 	return (<>
-		<div style={pageStyle}>
-			<Navbar />
+		<div style={page}>
+			<Navbar style={{ position: 'sticky', top: 0, left: 0, right: 0, zIndex: 60, backgroundColor: colors.bg }} />
 				<div style={containerStyle}>
 					<div style={gridStyle}>
 						{/* LEFT COLUMN */}
@@ -681,12 +693,12 @@ const NewTripPage = () => {
 
 					{/* Trip Planner Section */}
 					<div style={{ marginTop: spacing.xl }}>
-						<h2 style={{ fontSize: fontSize.xl, fontWeight: 1000, color: colors.accent5, marginBottom: spacing.lg }}>
+						<h2 style={{ fontSize: fontSize.xl, fontWeight: 1000, color: colors.accent1, marginBottom: spacing.lg }}>
 							Trip Planner
 						</h2>
 						
 						<div style={{ display: 'flex', gap: spacing.md, alignItems: 'center', marginBottom: spacing.md }}>
-							<label style={{ fontWeight: 600, color: colors.text }}>Day</label>
+							<label style={{ fontWeight: 600, color: colors.bg, fontFamily: fontFamily.base }}>Day</label>
 							<select
 								value={openDay}
 								onChange={(e) => setOpenDay(parseInt(e.target.value))}
@@ -832,8 +844,8 @@ const NewTripPage = () => {
 						{/* Create Trip Button */}
 						<div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: spacing.lg }}>
 							<Button variant="primary" style={{ minWidth: '200px', padding: `${spacing.md} ${spacing.xl}` }}>
-								<FontAwesomeIcon icon={faPlus} /> Create Trip
-							</Button>
+								<FontAwesomeIcon icon={faPlus} style={{ marginRight: spacing.xs }} />
+								<span style={{ fontWeight: 700, fontFamily: fontFamily.base}}>Save Trip</span>							</Button>
 						</div>
 					</div>
 				</div>
@@ -841,7 +853,7 @@ const NewTripPage = () => {
 
 			{/* Modal for Add Custom Include */}
 						{showIncludeModal && (
-							<Modal open={showIncludeModal} onClose={() => { setShowIncludleModal(false); setNewIncludeName(''); }} title="Add Custom Include">
+										<Modal open={showIncludeModal} onClose={() => { setShowIncludeModal(false); setNewIncludeName(''); }} title="Add Custom Include">
 								<div style={modalStyles.formGroup}>
 									<label style={modalStyles.label}>Include Name</label>
 									<input
