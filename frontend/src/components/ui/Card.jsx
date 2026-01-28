@@ -18,6 +18,7 @@ const Card = ({ children, style = {}, ...props }) => {
     boxShadow: shadows.md,
     fontFamily: fontFamily.base,
     ...style,
+		willChange: 'transform',
   };
 
   return (
@@ -175,11 +176,13 @@ export const StyledTripCard = ({ image, title, location, price, pax, children, o
 			style={cardBase}
 			onMouseEnter={(e) => {
 				if (!hover) return;
+				e.currentTarget.style.zIndex = 20;
 				e.currentTarget.style.transform = 'translateY(-6px)';
 				e.currentTarget.style.boxShadow = '0 12px 30px rgba(8,15,20,0.18)';
 			}}
 			onMouseLeave={(e) => {
 				if (!hover) return;
+				e.currentTarget.style.zIndex = 'auto';
 				e.currentTarget.style.transform = 'none';
 				e.currentTarget.style.boxShadow = cardBase.boxShadow;
 			}}

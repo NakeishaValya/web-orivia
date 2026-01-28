@@ -122,7 +122,7 @@ export default function AgentTripPage() {
     grid: {
       display: 'grid',
       gridTemplateColumns: 'repeat(4, minmax(220px, 1fr))',
-      gap: 18,
+      gap: 12,
       width: '100%',
       boxSizing: 'border-box',
     },
@@ -212,7 +212,7 @@ export default function AgentTripPage() {
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', paddingRight: 8 }}>
-          <section style={{ ...styles.grid, width: '100%', overflow: 'hidden' }}>
+          <section style={{ ...styles.grid, width: '100%', overflow: 'visible', marginTop: spacing.md }}>
           {dummyTrips.map((trip, idx) => (
             <StyledTripCard
               key={idx}
