@@ -14,6 +14,7 @@ import NewTripPage from './pages/trip/NewTripPage.jsx';
 import TripEditPage from './pages/trip/TripEditPage.jsx';
 import ParticipantPage from './pages/trip/ParticipantPage.jsx';
 import CustomerExplorePage from './pages/explore/CustomerPage.jsx';
+import CustomerBookingPage from './pages/explore/BookingPage.jsx';
 
 const App = () => {
   return (
@@ -33,6 +34,7 @@ const App = () => {
         <Route path="/trip/edit" element={<TripEditPage />} />
         <Route path="/trip/participant" element={<ParticipantPage />} />
         <Route path="/explore/customer" element={<CustomerExplorePage />} />
+        <Route path="/explore/booking" element={<CustomerBookingPage />} />
       </Routes>
     </Router>
   );
