@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLocationDot, faCalendar, faUsers, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import Navbar from '../../components/ui/Navbar.jsx';
 import Button from '../../components/ui/Button';
+import { GridTripCard } from '../../components/ui/Card.jsx';
 import { colors, spacing, radius, fontSize, fontFamily } from '../../styles/variables';
 
 // Sample trip data
@@ -406,130 +407,11 @@ export default function CustomerExplorePage() {
               gap: spacing.lg
             }}>
               {TRIP_DATA.map(trip => (
-                <div key={trip.id} style={{
-                  backgroundColor: colors.bg,
-                  borderRadius: radius.lg,
-                  overflow: 'hidden',
-                  boxShadow: '0 6px 18px rgba(0, 0, 0, 0.1)',
-                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                  cursor: 'pointer'
-                }}
-                onClick={() => {
-                  if (trip.id === 1) {
-                    navigate('/explore/booking');
-                  }
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-6px)';
-                  e.currentTarget.style.boxShadow = '0 12px 28px rgba(0, 0, 0, 0.2)';
-                  e.currentTarget.style.zIndex = 60;
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 6px 18px rgba(0, 0, 0, 0.1)';
-                  e.currentTarget.style.zIndex = 0;
-                }}
-                >
-                  {/* Image */}
-                  <div style={{
-                    width: '100%',
-                    height: '200px',
-                    position: 'relative',
-                    overflow: 'hidden'
-                  }}>
-                    <img 
-                      src={trip.image} 
-                      alt={trip.name}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover'
-                      }}
-                    />
-                    {/* Duration Badge */}
-                    <div style={{
-                      position: 'absolute',
-                      top: spacing.sm,
-                      left: spacing.sm,
-                      backgroundColor: 'rgba(139, 115, 85, 0.9)',
-                      color: colors.bg,
-                      padding: `${spacing.xs} ${spacing.sm}`,
-                      borderRadius: radius.sm,
-                      fontSize: fontSize.xs,
-                      fontWeight: 700
-                    }}>
-                      {trip.duration.days}D{trip.duration.nights}N
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div style={{ padding: spacing.md }}>
-                    <h3 style={{
-                      fontSize: fontSize.lg,
-                      fontWeight: 700,
-                      color: colors.accent4,
-                      marginBottom: spacing.xs,
-                      fontFamily: fontFamily.base
-                    }}>
-                      {trip.name}
-                    </h3>
-                    
-                    <p style={{
-                      fontSize: fontSize.sm,
-                      color: colors.text,
-                      marginBottom: spacing.sm,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: spacing.xs
-                    }}>
-                      <FontAwesomeIcon icon={faLocationDot} color={colors.accent3} size="sm" />
-                      {trip.location}
-                    </p>
-
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: spacing.sm,
-                      paddingBottom: spacing.sm,
-                      borderBottom: `1px solid ${colors.accent5}20`
-                    }}>
-                      <div style={{ fontSize: fontSize.xs, color: colors.text }}>
-                        <FontAwesomeIcon icon={faCalendar} size="sm" style={{ marginRight: spacing.xs }} />
-                        {trip.date}
-                      </div>
-                    </div>
-
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
-                      <div>
-                        <div style={{ fontSize: fontSize.xs, color: colors.text, marginBottom: 2 }}>
-                          Starting from
-                        </div>
-                        <div style={{
-                          fontSize: fontSize.lg,
-                          fontWeight: 700,
-                          color: colors.accent3
-                        }}>
-                          {trip.price}
-                        </div>
-                      </div>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: spacing.xs,
-                        color: colors.text,
-                        fontSize: fontSize.sm
-                      }}>
-                        <FontAwesomeIcon icon={faUsers} />
-                        {trip.pax} pax
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <GridTripCard
+                  key={trip.id}
+                  trip={trip}
+                  onClick={() => { if (trip.id === 1) navigate('/explore/booking'); }}
+                />
               ))}
             </div>
           </div>
