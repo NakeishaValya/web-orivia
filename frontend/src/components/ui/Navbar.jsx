@@ -200,9 +200,9 @@ export const TripTabs = () => {
   const navigate = useNavigate();
 
   const styles = {
-    row: { display: 'flex', gap: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 20, paddingTop: 8, paddingBottom: 8 },
-    tabButton: { background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px 12px', fontSize: 16, fontWeight: 700, color: colors?.dark || '#10323a' },
-    tabActiveBar: { height: 4, width: 48, borderRadius: 4, background: colors?.accent5 || '#3b5b2a', marginTop: 6 },
+    row: { display: 'flex', gap: 24, alignItems: 'center', justifyContent: 'center'},
+    tabButton: { background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700 },
+    tabActiveBar: { height: 4, width: 48, borderRadius: 4, background: colors.accent5, marginTop: 6 },
   };
 
   const isEdit = location.pathname === '/trip/edit';
@@ -211,12 +211,12 @@ export const TripTabs = () => {
   return (
     <div style={styles.row}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <button style={styles.tabButton} onClick={() => navigate('/trip/edit')}>Edit</button>
+        <button style={{ ...styles.tabButton, color: isEdit ? colors.accent5 : colors.accent3 }} onClick={() => navigate('/trip/edit')}>Edit</button>
         {isEdit && <div style={styles.tabActiveBar} />}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <button style={styles.tabButton} onClick={() => navigate('/trip/participant')}>Participant</button>
+        <button style={{ ...styles.tabButton, color: isParticipant ? colors.accent5 : colors.accent3 }} onClick={() => navigate('/trip/participant')}>Participant</button>
         {isParticipant && <div style={styles.tabActiveBar} />}
       </div>
     </div>
