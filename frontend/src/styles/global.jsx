@@ -1,4 +1,4 @@
-import { colors, fontFamily, fontFamilySerif } from './variables.jsx';
+import { colors, fontFamily, fontFamilySerif, spacing } from './variables.jsx';
 
 export const globalStyles = `
 	* {
@@ -91,16 +91,17 @@ export const globalStyles = `
 		outline: none;
 	}
 
+	/* Allow native scrollbars by default; custom areas use .custom-scrollbar */
 	/* Firefox */
 	html, body {
-		scrollbar-width: none;
-		-ms-overflow-style: none; /* IE 10+ */
+		scrollbar-width: auto;
+		-ms-overflow-style: auto; /* IE 10+ */
 	}
 
 	/* WebKit (Chrome, Safari, Opera) */
 	html::-webkit-scrollbar, body::-webkit-scrollbar {
-		width: 0;
-		height: 0;
+		width: auto;
+		height: auto;
 	}
 
 	::selection {
@@ -119,6 +120,61 @@ export const globalStyles = `
 		.container {
 			padding: 0 16px;
 		}
+	}
+
+	/* Custom scrollbars for designated scrollable areas */
+	.custom-scrollbar {
+		scrollbar-width: thin; /* Firefox */
+		scrollbar-color: ${colors.accent4} transparent;
+	}
+
+	.custom-scrollbar::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	.custom-scrollbar::-webkit-scrollbar-track {
+		background: ${colors.accent3}12; /* subtle track tint */
+		border-radius: 10px;
+	}
+
+	.custom-scrollbar::-webkit-scrollbar-thumb {
+		background: ${colors.accent4};
+		border-radius: 10px;
+		transition: background 0.2s ease;
+	}
+
+	.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+		background: ${colors.accent5};
+	}
+
+	/* Cards scroll (used for trip card grids and similar panels) */
+	.cards-scroll {
+		max-height: calc(100vh - 240px);
+		overflow-y: auto;
+		padding-right: ${spacing.sm};
+		padding-top: ${spacing.md};
+		box-sizing: border-box;
+		scrollbar-width: thin; /* Firefox */
+		scrollbar-color: ${colors.accent4} transparent;
+	}
+
+	.cards-scroll::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	.cards-scroll::-webkit-scrollbar-track {
+		background: rgba(127, 110, 40, 0.06);
+		border-radius: 10px;
+	}
+
+	.cards-scroll::-webkit-scrollbar-thumb {
+		background: ${colors.accent4};
+		border-radius: 10px;
+		transition: background 0.2s ease;
+	}
+
+	.cards-scroll::-webkit-scrollbar-thumb:hover {
+		background: rgba(127, 110, 40, 0.9);
 	}
 `;
 

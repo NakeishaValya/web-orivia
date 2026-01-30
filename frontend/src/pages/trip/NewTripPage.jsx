@@ -486,7 +486,7 @@ const NewTripPage = () => {
 							<TripCard style={{ backgroundColor: 'rgb(255, 255, 255)', borderRadius: '12px', padding: '24px', boxShadow: 'rgba(0, 0, 0, 0.5) 0px 1px 3px', height: '100%' }}>
 								<CardHeader>Schedule</CardHeader>
 								<div style={{ display: 'flex', flexDirection: 'column', height: '270px' }}>
-									<div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: spacing.sm, overflowY: 'auto', paddingRight: spacing.sm }}>
+									<div className="custom-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: spacing.sm, overflowY: 'auto', paddingRight: spacing.sm }}>
 										{schedules.map((schedule) => (
 											<div
 												key={schedule.id}
@@ -611,7 +611,7 @@ const NewTripPage = () => {
 							{/* Pick Up Point Section */}
 							<TripCard>
 								<CardHeader>Pick Up Point</CardHeader>
-								<div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm, maxHeight: '90px', overflowY: 'auto', paddingRight: spacing.sm }}>
+								<div className="custom-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm, maxHeight: '90px', overflowY: 'auto', paddingRight: spacing.sm }}>
 									{pickupPoints.map((point) => (
 										<div
 											key={point.id}
@@ -653,7 +653,7 @@ const NewTripPage = () => {
 							{/* Include Section */}
 							<TripCard>
 								<CardHeader>Include</CardHeader>
-								<div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm, maxHeight: '140px', overflowY: 'auto', paddingRight: spacing.sm }}>
+								<div className="custom-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm, maxHeight: '140px', overflowY: 'auto', paddingRight: spacing.sm }}>
 									{includes.map((item) => (
 										<div
 											key={item.id}
@@ -719,7 +719,7 @@ const NewTripPage = () => {
 								overflow: 'hidden'
 							}}>
 								{/* Table with scrollable body: fixed height for 3 rows; show scrollbar when >=4 rows */}
-								<div style={{ height: '313.8px', minHeight: '313.8px', overflowY: (tripPlanner[openDay] || []).length >= 4 ? 'scroll' : 'auto', position: 'relative' }}>
+								<div className="custom-scrollbar" style={{ height: '313.8px', minHeight: '313.8px', overflowY: (tripPlanner[openDay] || []).length >= 4 ? 'scroll' : 'auto', position: 'relative' }}>
 									<table style={{ width: '100%', borderCollapse: 'collapse' }}>
 										<thead style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: colors.accent5 }}>
 											<tr>

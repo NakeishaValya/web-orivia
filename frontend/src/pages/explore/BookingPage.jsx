@@ -52,11 +52,11 @@ export default function BookingPage() {
   const [selectedDay, setSelectedDay] = useState(1);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#E8E4DC',
-      fontFamily: fontFamily.base
-    }}>
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#E8E4DC',
+        fontFamily: fontFamily.base
+      }}>
       {/* Fixed Navbar */}
       <Navbar style={{ 
         position: 'sticky', 
@@ -201,10 +201,14 @@ export default function BookingPage() {
                 }}>
                   Trip Information
                 </h3>
-                <div style={{
+                <div className="custom-scrollbar" style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: spacing.sm
+                  gap: spacing.sm,
+                  maxHeight: '150px',
+                  overflowY: 'auto',
+                  paddingRight: spacing.sm,
+                  boxSizing: 'border-box'
                 }}>
                   <div style={{
                     display: 'flex',
@@ -260,10 +264,14 @@ export default function BookingPage() {
                 }}>
                   Include
                 </h3>
-                <div style={{
+                <div className="custom-scrollbar" style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: spacing.sm
+                  gap: spacing.sm,
+                  maxHeight: '280px',
+                  overflowY: 'auto',
+                  paddingRight: spacing.sm,
+                  boxSizing: 'border-box'
                 }}>
                   {INCLUDES.map((item, idx) => (
                     <div key={idx} style={{
@@ -297,10 +305,14 @@ export default function BookingPage() {
                 }}>
                   Pick-Up Point
                 </h3>
-                <div style={{
+                <div className="custom-scrollbar" style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: spacing.sm
+                  gap: spacing.sm,
+                  maxHeight: '100px',
+                  overflowY: 'auto',
+                  paddingRight: spacing.xs,
+                  boxSizing: 'border-box'
                 }}>
                   {PICKUP_POINTS.map((point, idx) => (
                     <div key={idx} style={{
@@ -487,6 +499,6 @@ export default function BookingPage() {
         {/* Bottom Spacing */}
         <div style={{ height: spacing.xl }} />
       </div>
-    </div>
+      </div>
   );
 }

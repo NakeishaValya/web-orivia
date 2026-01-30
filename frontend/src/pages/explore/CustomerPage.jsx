@@ -425,14 +425,7 @@ export default function CustomerExplorePage() {
           />
 
           {/* CARD GRID SECTION (Scrollable) */}
-          <div style={{
-            maxHeight: 'calc(100vh - 240px)',
-            overflowY: 'auto',
-            paddingRight: 8,
-            paddingTop: 16,
-            scrollbarWidth: 'thin',
-            scrollbarColor: 'rgb(127, 110, 40) transparent'
-          }}>
+          <div className="cards-scroll">
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(3, 1fr)',

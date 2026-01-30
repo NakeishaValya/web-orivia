@@ -193,7 +193,7 @@ export default function AgentTripPage() {
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', paddingRight: spacing.sm, paddingTop: spacing.md, scrollbarWidth: 'thin', scrollbarColor: `${colors?.accent4 || '#000'} transparent` }}>
+        <div className="cards-scroll" style={{ flex: 1, overflowX: 'hidden' }}>
           <section style={{ ...styles.grid, width: '100%', overflow: 'visible', marginTop: spacing.md }}>
           {dummyTrips.map((trip, idx) => (
             <GridTripCard
