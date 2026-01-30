@@ -1,6 +1,7 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash, faTag, faUser, faLocationDot, faCalendar } from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faTag, faUser, faLocationDot, faCalendar, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import Button from './Button';
 import {
   colors,
   spacing,
@@ -28,7 +29,6 @@ const Card = ({ children, style = {}, ...props }) => {
   );
 };
 
-// AuthCard: reusable card component for auth pages (Login / Register)
 export const AuthCard = ({ children, style = {}, image, imageWrapperStyle = {}, imageSectionStyle = {}, ...props }) => {
   const authStyle = {
     position: 'relative',
@@ -279,7 +279,90 @@ export const GridTripCard = ({ trip = {}, onClick, style = {} }) => {
 		fontWeight: 700
 	};
 
+	const formatPrice = (p) => {
+		if (p == null) return '';
+		if (typeof p === 'number') return `Rp${p.toLocaleString('id-ID')}`;
+		// fallback if already a formatted string
+		return String(p);
+	};
+
+	const formatLocation = (loc) => {
+		if (!loc) return '';
+		if (typeof loc === 'string') return loc;
+		return `${loc.state}${loc.country ? ', ' + loc.country : ''}`;
+	};
+
+	const formatPax = (p) => {
+		if (p == null) return '';
+		if (typeof p === 'number') return `${p} pax`;
+		return p.toString().toLowerCase().includes('pax') ? p : `${p} pax`;
+	};
+
+	const formatTitle = (t) => {
+		if (!t) return '';
+		const rawName = t.name || t.title || '';
+		const days = t.duration?.days;
+		const nights = t.duration?.nights;
+		// remove existing duration prefix if present (e.g. "2D1N - ")
+		const baseName = rawName.replace(/^\s*\d+D\d+N\s*-\s*/i, '');
+		if (days != null && nights != null) return `${days}D${nights}N - ${baseName}`;
+		return rawName;
+	};
+
 	const contentStyle = { padding: spacing.md };
+
+	const formatDate = (iso) => {
+		if (!iso) return '';
+		try {
+			const d = new Date(iso);
+			const opts = { day: 'numeric', month: 'short' };
+			return d.toLocaleDateString('en-GB', opts);
+		} catch (e) {
+			return iso;
+		}
+	};
+
+	const formatDateRange = (start, end, fallback) => {
+		if (start && end) {
+			const s = formatDate(start);
+			const e = formatDate(end);
+			return `${s} - ${e}`;
+		}
+		return fallback || '';
+	};
+
+	const getStartEnd = (trip) => {
+		const dateObj = trip.date;
+		if (Array.isArray(dateObj) && dateObj.length > 0) {
+			return [dateObj[0].startDate || dateObj[0].start_date, dateObj[0].endDate || dateObj[0].end_date];
+		}
+		const single = dateObj || {};
+		const start = single.startDate || single.start_date || trip.startDate || trip.start_date;
+		const end = single.endDate || single.end_date || trip.endDate || trip.end_date;
+		return [start, end];
+	};
+
+	const getDateRanges = (trip) => {
+		const dateObj = trip.date;
+		if (Array.isArray(dateObj)) {
+			return dateObj.map(d => ({ start: d.startDate || d.start_date, end: d.endDate || d.end_date }));
+		}
+		if (dateObj && typeof dateObj === 'object') {
+			return [{ start: dateObj.startDate || dateObj.start_date, end: dateObj.endDate || dateObj.end_date }];
+		}
+		if (trip.startDate || trip.start_date || trip.endDate || trip.end_date) {
+			return [{ start: trip.startDate || trip.start_date, end: trip.endDate || trip.end_date }];
+		}
+		return [];
+	};
+
+	const daysBetweenInclusive = (startIso, endIso) => {
+		if (!startIso || !endIso) return 0;
+		const s = new Date(startIso);
+		const e = new Date(endIso);
+		const msPerDay = 24 * 60 * 60 * 1000;
+		return Math.round((e - s) / msPerDay) + 1;
+	};
 
 	return (
 		<div
@@ -298,31 +381,45 @@ export const GridTripCard = ({ trip = {}, onClick, style = {} }) => {
 		>
 			<div style={imageStyle}>
 				<img src={trip.image} alt={trip.name} style={img} />
-				<div style={badgeStyle}>{trip.duration?.days}D{trip.duration?.nights}N</div>
+				<div style={badgeStyle}>{trip.destinationType || trip.type || ''}</div>
 			</div>
 
 			<div style={contentStyle}>
-				<h3 style={{ fontSize: fontSize.lg, fontWeight: 700, color: colors.accent4, marginBottom: spacing.xs, fontFamily: fontFamily.base }}>{trip.name}</h3>
+				<h3 style={{ fontSize: fontSize.lg, fontWeight: 700, color: colors.accent4, margin: 0, fontFamily: fontFamily.base }}>{formatTitle(trip)}</h3>
+
 				<p style={{ fontSize: fontSize.sm, color: colors.text, marginBottom: spacing.sm, display: 'flex', alignItems: 'center', gap: spacing.xs }}>
 					<FontAwesomeIcon icon={faLocationDot} color={colors.accent3} size="sm" />
-					{trip.location}
+					{formatLocation(trip.location)}
 				</p>
 
 				<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm, paddingBottom: spacing.sm, borderBottom: `1px solid ${colors.accent5}20` }}>
 					<div style={{ fontSize: fontSize.xs, color: colors.text }}>
 						<FontAwesomeIcon icon={faCalendar} size="sm" style={{ marginRight: spacing.xs }} />
-						{trip.date}
+						{(function(){
+							const ranges = getDateRanges(trip);
+							// If `date` is an array (AgentPage uses array of ranges), show how many ranges there are.
+							if (Array.isArray(trip.date)) {
+								return `${ranges.length} dates`;
+							}
+							// If there's at least one range (CustomerPage uses single object), show the first range as formatted dates.
+							if (ranges.length > 0) {
+								const r = ranges[0];
+								return formatDateRange(r.start, r.end, '');
+							}
+							const [s,e] = getStartEnd(trip);
+							return formatDateRange(s,e, trip.date && typeof trip.date === 'string' ? trip.date : '');
+						})()}
 					</div>
 				</div>
 
 				<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 					<div>
 						<div style={{ fontSize: fontSize.xs, color: colors.text, marginBottom: 2 }}>Starting from</div>
-						<div style={{ fontSize: fontSize.lg, fontWeight: 700, color: colors.accent3 }}>{trip.price}</div>
+						<div style={{ fontSize: fontSize.lg, fontWeight: 700, color: colors.accent3 }}>{formatPrice(trip.price)}</div>
 					</div>
 					<div style={{ display: 'flex', alignItems: 'center', gap: spacing.xs, color: colors.text, fontSize: fontSize.sm }}>
 						<FontAwesomeIcon icon={faUser} />
-						{trip.pax} pax
+						{formatPax(trip.pax)}
 					</div>
 				</div>
 			</div>
@@ -522,3 +619,186 @@ export const TextLink = ({ children, onClick, style = {} }) => {
 };
 
 export default Card;
+
+// Search Filters Card: Start Date / End Date / Location / Pax + Search/Clear
+export const SearchFiltersCard = ({
+	startDate,
+	endDate,
+	setStartDate,
+	setEndDate,
+	location,
+	setLocation,
+	pax,
+	setPax,
+	onSearch = () => {},
+	onClear = () => {},
+	style = {}
+}) => {
+	return (
+		<div style={{
+			position: 'sticky',
+			top: '100px',
+			zIndex: 50,
+			backgroundColor: 'transparent',
+			borderRadius: radius.lg,
+			padding: spacing.lg,
+			border: '3px solid #3E5626',
+			boxShadow: '0 10px 50px #3E5626',
+			...style
+		}}>
+			<div style={{
+				display: 'grid',
+				gridTemplateColumns: '1fr 1fr 1fr 120px',
+				gap: spacing.md,
+				marginBottom: spacing.md
+			}}>
+				{/* Start Date */}
+				<div style={{
+					backgroundColor: colors.accent3,
+					padding: spacing.md,
+					borderRadius: radius.md,
+					display: 'flex',
+					flexDirection: 'column',
+					gap: spacing.xs
+				}}>
+					<label style={{ fontSize: fontSize.xs, color: colors.bg, fontWeight: 600, fontFamily: fontFamily.base }}>
+						Start Date
+					</label>
+					<div style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+						<FontAwesomeIcon icon={faCalendar} color={colors.bg} />
+						<input
+							type="date"
+							value={startDate}
+							onChange={(e) => setStartDate(e.target.value)}
+							style={{
+								background: 'transparent',
+								border: 'none',
+								color: colors.bg,
+								fontSize: fontSize.sm,
+								fontWeight: 700
+							}}
+						/>
+					</div>
+				</div>
+
+				{/* End Date */}
+				<div style={{
+					backgroundColor: colors.accent3,
+					padding: spacing.md,
+					borderRadius: radius.md,
+					display: 'flex',
+					flexDirection: 'column',
+					gap: spacing.xs
+				}}>
+					<label style={{ fontSize: fontSize.xs, color: colors.bg, fontWeight: 600, fontFamily: fontFamily.base }}>
+						End Date
+					</label>
+					<div style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+						<FontAwesomeIcon icon={faCalendar} color={colors.bg} />
+						<input
+							type="date"
+							value={endDate}
+							onChange={(e) => setEndDate(e.target.value)}
+							style={{
+								background: 'transparent',
+								border: 'none',
+								color: colors.bg,
+								fontSize: fontSize.sm,
+								fontWeight: 700
+							}}
+						/>
+					</div>
+				</div>
+
+				{/* Location */}
+				<div style={{
+					backgroundColor: colors.accent3,
+					padding: spacing.md,
+					borderRadius: radius.md,
+					display: 'flex',
+					flexDirection: 'column',
+					gap: spacing.xs
+				}}>
+					<label style={{ fontSize: fontSize.xs, color: colors.bg, fontWeight: 600, fontFamily: fontFamily.base}}>
+						Location
+					</label>
+					<div style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+						<FontAwesomeIcon icon={faLocationDot} color={colors.bg} />
+						<input
+							type="text"
+							placeholder="Country or state"
+							value={location}
+							onChange={(e) => setLocation(e.target.value)}
+							style={{
+								background: 'transparent',
+								border: 'none',
+								color: colors.bg,
+								fontSize: fontSize.sm,
+								fontWeight: 700
+							}}
+						/>
+					</div>
+				</div>
+
+				{/* Pax */}
+				<div style={{
+					backgroundColor: colors.accent3,
+					padding: spacing.md,
+					borderRadius: radius.md,
+					display: 'flex',
+					flexDirection: 'column',
+					gap: spacing.xs,
+					fontFamily: fontFamily.base
+				}}>
+					<label style={{ fontSize: fontSize.xs, color: colors.bg, fontWeight: 600, fontFamily: fontFamily.base }}>
+						Pax
+					</label>
+					<div style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+						<FontAwesomeIcon icon={faUser} color={colors.bg} />
+						<input
+							type="number"
+							min={1}
+							step={1}
+							value={pax}
+							onChange={(e) => setPax(e.target.value)}
+							style={{
+								background: 'transparent',
+								border: 'none',
+								color: colors.bg,
+								fontSize: fontSize.sm,
+								fontWeight: 700,
+								width: 48
+							}}
+						/>
+					</div>
+				</div>
+			</div>
+
+			{/* Search & Clear Buttons */}
+			<div style={{ display: 'flex', gap: spacing.sm }}>
+				<Button variant="primary" style={{flex: 1, fontSize: fontSize.base, fontWeight: 700}} onClick={onSearch}>
+					<FontAwesomeIcon icon={faMagnifyingGlass} />
+					Search Trip
+				</Button>
+
+				<button
+					style={{
+						width: 120,
+						backgroundColor: colors.error,
+						color: colors.bg,
+						padding: spacing.md,
+						borderRadius: radius.md,
+						fontSize: fontSize.base,
+						fontWeight: 700,
+						cursor: 'pointer',
+						transition: 'all 0.3s ease',
+						fontFamily: fontFamily.base
+					}}
+					onClick={onClear}
+				>
+					Clear
+				</button>
+			</div>
+		</div>
+	);
+};
