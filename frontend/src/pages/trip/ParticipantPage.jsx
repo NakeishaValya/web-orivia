@@ -77,7 +77,8 @@ export default function ParticipantPage() {
   };
 
   const page = {
-    minHeight: '100vh',
+    height: '100vh',
+    overflow: 'hidden',    
     fontFamily: fontFamily?.base || 'Inter, system-ui, -apple-system',
     backgroundColor: colors.accent1,
     backgroundImage: `url(${extendAgentBg})`,

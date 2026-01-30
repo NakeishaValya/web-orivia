@@ -12,7 +12,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faUser, faTag } from '@fortawesome/free-solid-svg-icons';
 import Navbar from '../../components/ui/Navbar.jsx';
 import Button from '../../components/ui/Button.jsx';
-import { StyledTripCard } from '../../components/ui/Card.jsx';
+import { StyledTripCard, GridTripCard } from '../../components/ui/Card.jsx';
 import tripExploreBg from '../../assets/images/tripexplorebg.png';
 
 export default function AgentTripPage() {
@@ -20,68 +20,108 @@ export default function AgentTripPage() {
 
   const dummyTrips = [
     {
-      title: '2D3N - Banda Neira',
-      location: 'Maluku, Indonesia',
-      price: 'Rp4.575.000,00',
-      pax: '15 pax',
+      title: 'Banda Neira',
+      duration: { days: 2, nights: 3 },
+      location: { state: 'Maluku', country: 'Indonesia' },
+      price: 4575000,
+      date: [
+        { start_date: '2026-02-01', end_date: '2026-02-02' },
+        { start_date: '2026-03-01', end_date: '2026-03-03' },
+      ],
+      pax: '15',
       image: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1600&q=60',
+      destinationType: 'Island Exploration',
     },
     {
-      title: '2D1N - Labuan Bajo',
-      location: 'East Nusa Tenggara, Indonesia',
-      price: 'Rp4.575.000,00',
-      pax: '15 pax',
+      title: 'Labuan Bajo',
+      duration: { days: 2, nights: 1 },
+      location: { state: 'East Nusa Tenggara', country: 'Indonesia' },
+      price: 4575000,
+      date: [ { start_date: '2026-03-10', end_date: '2026-03-11' } ],
+      pax: '15',
       image: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1600&q=60',
+      destinationType: 'Island Exploration',
     },
     {
-      title: '3D2N - Raja Ampat',
-      location: 'Maluku, Indonesia',
-      price: 'Rp4.575.000,00',
-      pax: '15 pax',
+      title: 'Raja Ampat',
+      duration: { days: 3, nights: 2 },
+      location: { state: 'Maluku', country: 'Indonesia' },
+      price: 4575000,
+      date: [
+        { start_date: '2026-04-01', end_date: '2026-04-03' },
+        { start_date: '2026-06-10', end_date: '2026-06-12' },
+      ],
+      pax: '15',
       image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=60',
+      destinationType: 'Island Exploration',
     },
     {
-      title: '4D3N - Lake Toba',
-      location: 'North Sumatra, Indonesia',
-      price: 'Rp4.575.000,00',
-      pax: '15 pax',
+      title: 'Lake Toba',
+      duration: { days: 4, nights: 3 },
+      location: { state: 'North Sumatra', country: 'Indonesia' },
+      price: 4575000,
+      date: [
+        { start_date: '2026-05-05', end_date: '2026-05-08' },
+        { start_date: '2026-09-01', end_date: '2026-09-04' },
+      ],
+      pax: '15',
       image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=60',
+      destinationType: 'City Tour',
     },
     {
-      title: '2D1N - Merbabu',
-      location: 'Central Java, Indonesia',
-      price: 'Rp1.500.000,00',
+      title: 'Merbabu',
+      duration: { days: 2, nights: 1 },
+      location: { state: 'Central Java', country: 'Indonesia' },
+      price: 1500000,
+      date: [
+        { start_date: '2026-06-12', end_date: '2026-06-13' },
+        { start_date: '2026-10-05', end_date: '2026-10-06' },
+      ],
       pax: '15 pax',
       image: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1600&q=60',
+      destinationType: 'Mount Hiking',
     },
     {
-      title: '5D6N - Carstensz Pyramid',
-      location: 'Central Papua, Indonesia',
-      price: 'Rp20.000.000,00',
+      title: 'Carstensz Pyramid',
+      duration: { days: 5, nights: 6 },
+      location: { state: 'Central Papua', country: 'Indonesia' },
+      price: 20000000,
+      date: [
+        { start_date: '2026-07-01', end_date: '2026-07-05' },
+        { start_date: '2026-11-01', end_date: '2026-11-05' },
+      ],
       pax: '15 pax',
       image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1600&q=60',
+      destinationType: 'Mount Hiking',
     },
     {
-      title: '3D2N - Kerinci',
-      location: 'West Sumatra, Indonesia',
-      price: 'Rp2.240.000,00',
+      title: 'Kerinci',
+      duration: { days: 3, nights: 2 },
+      location: { state: 'West Sumatra', country: 'Indonesia' },
+      price: 2240000,
+      date: [ { start_date: '2026-08-20', end_date: '2026-08-22' } ],
       pax: '15 pax',
       image: 'https://images.unsplash.com/photo-1470770903676-69b98201ea1c?auto=format&fit=crop&w=1600&q=60',
+      destinationType: 'Mount Hiking',
     },
     {
-      title: '2D1N - Kawah Ijen',
-      location: 'East Java, Indonesia',
-      price: 'Rp4.575.000,00',
+      title: 'Kawah Ijen',
+      duration: { days: 2, nights: 1 },
+      location: { state: 'East Java', country: 'Indonesia' },
+      price: 4575000,
+      date: [ { start_date: '2026-09-10', end_date: '2026-09-11' } ],
       pax: '15 pax',
       image: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1600&q=60',
+      destinationType: 'Mount Hiking',
     },
   ];
 
   const styles = {
     page: {
-      minHeight: '100vh',
+      height: '100vh',
+      overflow: 'hidden',
       backgroundColor: '#1A1F1D',
-      backgroundImage: `url(${tripExploreBg})`,
+      backgroundImage: 'url(https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=90&w=1920&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)',
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat',
@@ -94,14 +134,14 @@ export default function AgentTripPage() {
       margin: '0 auto',
       display: 'flex',
       flexDirection: 'column',
-      height: 'calc(100vh - 72px)',
+      height: 'calc(100vh - 32px)',
       overflow: 'hidden',
     },
     header: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 20,
+      marginBottom: 24,
       width: '100%',
       maxWidth: '1278px',
       boxSizing: 'border-box',
@@ -110,14 +150,17 @@ export default function AgentTripPage() {
     },
     title: {
       margin: 0,
-      fontSize: 28,
-      fontWeight: 700,
-      color: colors?.dark || '#10323a',
+      fontSize: 36,
+      fontWeight: 800,
+      color: colors.accent5,
+      letterSpacing: '0.2px'
     },
     subtitle: {
-      margin: 0,
-      color: 'rgba(0,0,0,0.55)',
-      fontSize: 13,
+      margin: '6px 0 0 0',
+      color: colors.accent5 ,
+      fontSize: 16,
+      fontWeight: 600,
+      opacity: 0.95
     },
     grid: {
       display: 'grid',
@@ -126,68 +169,7 @@ export default function AgentTripPage() {
       width: '100%',
       boxSizing: 'border-box',
     },
-    card: {
-      position: 'relative',
-      overflow: 'hidden',
-      borderRadius: radius?.lg || 12,
-      minHeight: 240,
-      background: 'linear-gradient(180deg, rgba(0,0,0,0.06), rgba(0,0,0,0.06))',
-      boxShadow: '0 6px 18px rgba(8,15,20,0.12)',
-      transition: `transform ${transitions?.normal || '200ms'} ease, box-shadow ${transitions?.normal || '200ms'} ease`,
-      cursor: 'pointer',
-    },
-    cardHover: {
-      transform: 'translateY(-6px)',
-      boxShadow: '0 12px 30px rgba(8,15,20,0.18)',
-    },
-    cardImage: {
-      position: 'absolute',
-      inset: 0,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      filter: 'brightness(0.9) contrast(0.95)',
-    },
-    cardOverlay: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      bottom: 0,
-      height: '55%',
-      background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 100%)',
-    },
-    cardContent: {
-      position: 'absolute',
-      left: 16,
-      bottom: 16,
-      right: 16,
-      color: '#fff',
-      zIndex: 2,
-    },
-    cardTitle: {
-      margin: 0,
-      fontSize: 16,
-      fontWeight: 700,
-      lineHeight: '1.1',
-      minHeight: 40,
-    },
-    cardSub: {
-      margin: '6px 0 10px 0',
-      fontSize: 12,
-      opacity: 0.95,
-    },
-    cardMeta: {
-      display: 'flex',
-      gap: 12,
-      alignItems: 'center',
-      fontSize: 12,
-      color: 'rgba(255,255,255,0.95)',
-    },
-    metaItem: {
-      display: 'inline-flex',
-      gap: 8,
-      alignItems: 'center',
-      opacity: 0.95,
-    },
+    // Card-specific inline styles removed — visuals come from centralized Card.jsx
   };
 
   return (
@@ -202,7 +184,7 @@ export default function AgentTripPage() {
           <div>
             <Button
               variant="primary"
-              style={{ gap: '8px', minWidth: '200px', minHeight: '40.8px', fontSize: fontSize.xs }}
+              style={{minWidth: '200px', minHeight: '40.8px', fontSize: fontSize.xs }}
               onClick={() => navigate('/trip/new')}
             >
               <FontAwesomeIcon icon={faPlus} />
@@ -211,18 +193,17 @@ export default function AgentTripPage() {
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', paddingRight: 8 }}>
+        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', paddingRight: spacing.sm, paddingTop: spacing.md, scrollbarWidth: 'thin', scrollbarColor: `${colors?.accent4 || '#000'} transparent` }}>
           <section style={{ ...styles.grid, width: '100%', overflow: 'visible', marginTop: spacing.md }}>
           {dummyTrips.map((trip, idx) => (
-            <StyledTripCard
+            <GridTripCard
               key={idx}
-              image={trip.image}
-              title={trip.title}
-              location={trip.location}
-              price={trip.price}
-              pax={trip.pax}
-              // DUMMYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY buat cek card 1 ya
-              onClick={trip.title === '2D3N - Banda Neira' ? () => navigate('/trip/edit') : undefined}
+              trip={{
+                ...trip,
+                name: trip.title,
+                duration: trip.duration
+              }}
+              onClick={trip.title === 'Banda Neira' ? () => navigate('/trip/edit') : undefined}
             />
           ))}
           </section>
