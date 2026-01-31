@@ -473,8 +473,8 @@ export default function TripEditPage() {
 
   const pageStyle = {
     minHeight: '100vh',
-    backgroundColor: colors.accent1,
-    backgroundImage: `url(${extendAgentBg})`,
+    backgroundImage: 'url("https://images.unsplash.com/photo-1584715625116-c1dbbfcf19be?q=80&w=2000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")',
+    backgroundColor: colors.bg,
     backgroundSize: 'cover',
     backgroundPosition: 'center top',
     backgroundRepeat: 'no-repeat',
@@ -501,7 +501,7 @@ export default function TripEditPage() {
   if (isParticipant) {
     return (
       <div style={pageStyle}>
-        <Navbar style={{ position: 'sticky', top: 0, left: 0, right: 0, zIndex: 60, backgroundColor: '#FBFBF9' }} />
+        <Navbar style={{ position: 'sticky', top: 0, left: 0, right: 0, zIndex: 60, backgroundColor: `${colors.bg}33`, backdropFilter: 'saturate(120%) blur(6px)', borderBottom: `1px solid ${colors.bg}20` }} />
         <div style={containerStyle}>
           <TripTabs />
           <div style={{
@@ -521,7 +521,7 @@ export default function TripEditPage() {
 
   return (<>
     <div style={pageStyle}>
-      <Navbar style={{ position: 'sticky', top: 0, left: 0, right: 0, zIndex: 60, backgroundColor: colors.bg }} />
+      <Navbar style={{ position: 'sticky', top: 0, left: 0, right: 0, zIndex: 60, backgroundColor: `${colors.bg}33`, backdropFilter: 'saturate(120%) blur(6px)', borderBottom: `1px solid ${colors.bg}20` }} />
       <div style={containerStyle}>
         <TripTabs />
         
