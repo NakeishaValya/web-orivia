@@ -47,7 +47,6 @@ export default function ParticipantPage() {
     return age;
   };
 
-  // export passenger list as CSV
   const downloadCSV = (rows) => {
     if (!rows || !rows.length) return;
     const headers = ['Username', 'Full Name', 'Gender', 'Age', 'Pick Up Point', 'Phone Number'];
@@ -135,7 +134,6 @@ export default function ParticipantPage() {
   const passengerCard = { backgroundColor: colors.bg, color: colors.text, borderRadius: radius.md, padding: spacing.lg, boxShadow: '0 6px 18px rgba(8,15,20,0.06)' };
   const passengerTableStyle = { ...tableStyle, color: colors.text, wordBreak: 'break-word' };
   const gridStyle = { display: 'grid', gridTemplateColumns: '380px 1fr', gap: spacing.lg, marginTop: spacing.lg };
-  // Ensure passenger card stretches to match left column height and table scrolls
   passengerCard.display = 'flex';
   passengerCard.flexDirection = 'column';
   passengerCard.flex = 1;
@@ -277,8 +275,8 @@ export default function ParticipantPage() {
                   <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                     <tr style={{ textAlign: 'center', borderBottom: `1px solid ${colors.accent5}22`, backgroundColor: colors.accent5 }}>
                       <th style={{ padding: spacing.sm, color: colors.bg, width: '11%', textAlign: 'center' }}>Username</th>
-                      <th style={{ padding: spacing.sm, color: colors.bg, width: '27%', textAlign: 'center' }}>Full Name</th>
-                      <th style={{ padding: spacing.sm, color: colors.bg, width: '8%', textAlign: 'center' }}>Gender</th>
+                      <th style={{ padding: spacing.sm, color: colors.bg, width: '25%', textAlign: 'center' }}>Full Name</th>
+                      <th style={{ padding: spacing.sm, color: colors.bg, width: '10%', textAlign: 'center' }}>Gender</th>
                       <th style={{ padding: spacing.sm, color: colors.bg, width: '7%', textAlign: 'center' }}>Age</th>
                       <th style={{ padding: spacing.sm, color: colors.bg, width: '28%', textAlign: 'center'}}>Pick Up Point</th>
                       <th style={{ padding: spacing.sm, color: colors.bg, width: '14%' }}>Phone Number</th>
