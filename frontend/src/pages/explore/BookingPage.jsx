@@ -1,85 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faCalendar, 
-  faLocationDot, 
-  faUsers, 
-  faCheck,
-  faChevronDown,
-  faChevronLeft,
-  faChevronRight
-} from '@fortawesome/free-solid-svg-icons';
+import { faCalendar, faLocationDot, faUsers, faCheck,faChevronDown,faChevronLeft,faChevronRight} from '@fortawesome/free-solid-svg-icons';
 import Navbar from '../../components/ui/Navbar.jsx';
 import Button from '../../components/ui/Button';
 import { TripCard } from '../../components/ui/Card.jsx';
 import { colors, spacing, radius, fontSize, fontFamily } from '../../styles/variables';
-
-// Sample rundown data
-const RUNDOWN_DATA = {
-  1: [
-    { time: '06.00 - 07.00', duration: '1', activity: 'Meeting point & briefing', location: 'Bandar Udara Komodo' },
-    { time: '07.00 - 09.30', duration: '2.5', activity: 'Sailing', location: 'Padar Island' },
-    { time: '09.30 - 11.00', duration: '1.5', activity: 'Trekking & sightseeing', location: 'Padar Island' },
-    { time: '11.00 - 13.00', duration: '2', activity: 'Beach time & snorkeling', location: 'Pink Beach' },
-    { time: '13.00 - 14.00', duration: '1', activity: 'Lunch', location: 'On Boat' },
-    { time: '14.00 - 16.00', duration: '2', activity: 'Komodo trekking', location: 'Komodo Island' },
-    { time: '16.00 - 19.00', duration: '3', activity: 'Sunset and Dinner', location: 'Sunset and Dinner' }
-  ],
-  2: [
-    { time: '06.00 - 08.00', duration: '2', activity: 'Breakfast & check out', location: 'Hotel' },
-    { time: '08.00 - 10.00', duration: '2', activity: 'Island hopping', location: 'Kanawa Island' },
-    { time: '10.00 - 12.00', duration: '2', activity: 'Snorkeling', location: 'Manta Point' },
-    { time: '12.00 - 13.00', duration: '1', activity: 'Lunch', location: 'Local Restaurant' }
-  ]
-};
-
-const INCLUDES = [
-  'Guide',
-  'Meals',
-  'First Aid',
-  'Insurance',
-  'Entrance Ticket',
-  'Transportation',
-  'Documentation',
-  'Documentation',
-  'Documentation',
-  'Documentation',
-  'Documentation',
-  'Accommodation'
-];
-
-const PICKUP_POINTS = [
-  'Orivia Agent Gambir, Jakarta',
-  'Orivia Agent Pasteur, Bandung',
-  'Komodo Airport, Labuan Bajo',
-  'Soekarno Hatta Airport, Jakarta'
-];
-
-// Dummy trips data
-const TRIP_DATA = [
-  {
-    id: 1,
-    name: 'Komodo Island',
-    description: 'Komodo Island, located in Indonesia eastern province of East Nusa Tenggara, is known for its stunning natural beauty and unique wildlife. The island is also home to a rich and vibrant local culture, which includes its own language, customs, and traditions. Here is some information about the local language and culture of Komodo Island and the surrounding area.',
-    location: { state: 'East Nusa Tenggara', country: 'Indonesia' },
-    date: { start_date: '2026-02-01', end_date: '2026-02-03' },
-    price: 4575000,
-    pax: 15,
-    slotAvailable: 8,
-    duration: { days: 2, nights: 1 },
-    image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=500&h=300&fit=crop',
-    type: 'Island Exploration',
-    destinationType: 'Island Exploration'
-  }
-];
-
-// Images for the trip (show 4 images in gallery elsewhere)
-const TRIP_IMAGES = [
-  'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop',
-  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop',
-  'https://images.unsplash.com/photo-1493558103817-58b2924bce98?w=800&h=600&fit=crop',
-  'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?w=800&h=600&fit=crop'
-];
+import { useParams } from 'react-router-dom';
+import { trips, TRIP_RUNDOWNS, TRIP_IMAGES, INCLUDES, PICKUP_POINTS } from '../../mocks/mockData.js';
 
 const monthNamesID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
@@ -122,14 +49,20 @@ export default function BookingPage() {
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
   const [isHover, setIsHover] = useState(false);
-  const trip = TRIP_DATA && TRIP_DATA[0] ? TRIP_DATA[0] : null;
+  const { id } = useParams();
+  const tripId = id ? Number(id) : null;
+  const trip = trips.find(t => Number(t.id) === tripId) || null;
+  const TRIP_IMAGES_LOCAL = (trip && trip.images) || TRIP_IMAGES[tripId] || TRIP_IMAGES[1] || [];
+  const RUNDOWN_DATA_LOCAL = (trip && trip.rundowns) || TRIP_RUNDOWNS || {};
+  const INCLUDES_LOCAL = (trip && trip.includes) || INCLUDES || [];
+  const PICKUP_LOCAL = (trip && trip.pickup_points) || PICKUP_POINTS || [];
 
   const prevImage = () => {
-    setImgIndex((i) => (i - 1 + TRIP_IMAGES.length) % TRIP_IMAGES.length);
+    setImgIndex((i) => (i - 1 + TRIP_IMAGES_LOCAL.length) % TRIP_IMAGES_LOCAL.length);
   };
 
   const nextImage = () => {
-    setImgIndex((i) => (i + 1) % TRIP_IMAGES.length);
+    setImgIndex((i) => (i + 1) % TRIP_IMAGES_LOCAL.length);
   };
 
   const handleTouchStart = (e) => {
@@ -156,8 +89,8 @@ export default function BookingPage() {
   return (
       <div style={{
         minHeight: '100vh',
-        backgroundImage: "url('https://images.unsplash.com/photo-1531168556467-80aace0d0144?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
-        backgroundSize: 'cover',
+        backgroundImage: 'url("https://images.unsplash.com/photo-1584715625116-c1dbbfcf19be?q=80&w=2000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")',
+        backgroundColor: colors.bg,        backgroundSize: 'cover',
         backgroundPosition: 'top-center',
         backgroundRepeat: 'no-repeat',
         fontFamily: fontFamily.base
@@ -194,8 +127,8 @@ export default function BookingPage() {
                 onMouseLeave={() => setIsHover(false)}
               >
               <img
-                src={TRIP_IMAGES[imgIndex]}
-                alt={`Labuan Bajo ${imgIndex + 1}`}
+                src={TRIP_IMAGES_LOCAL[imgIndex]}
+                alt={`${trip ? trip.name : 'Trip'} ${imgIndex + 1}`}
                 style={{
                   width: '100%',
                   height: '100%',
@@ -305,16 +238,16 @@ export default function BookingPage() {
                 <h1 style={{
                   fontSize: '40px',
                   fontWeight: 800,
-                  color: colors.accent5,
+                  color: colors.bg,
                   marginBottom: spacing.xs,
                   fontFamily: fontFamily.base,
                   lineHeight: 1.2
                 }}>
-                  Labuan Bajo
+                  {trip ? trip.name : 'Trip'}
                 </h1>
                 <p style={{
                   fontSize: fontSize.xl,
-                  color: colors.accent4,
+                  color: colors.accent1,
                   fontWeight: 600,
                   marginBottom: spacing.xs
                 }}>
@@ -335,7 +268,7 @@ export default function BookingPage() {
                 }}>
                   <div style={{
                     fontSize: fontSize.sm,
-                    color: colors.accent5,
+                    color: colors.accent2,
                     marginBottom: spacing.xs
                   }}>
                     Starting from
@@ -343,10 +276,10 @@ export default function BookingPage() {
                   <div style={{
                     fontSize: '24px',
                     fontWeight: 700,
-                    color: colors.accent4,
+                    color: colors.accent1,
                     marginBottom: spacing.md
                   }}>
-                    {formatRupiah(trip.price)}<span style={{ fontSize: fontSize.lg, fontWeight: 600 }}>/pax</span>
+                    {formatRupiah(trip?.price)}<span style={{ fontSize: fontSize.lg, fontWeight: 600 }}>/pax</span>
                   </div>
                   <Button 
                     variant="primary" 
@@ -441,7 +374,7 @@ export default function BookingPage() {
                   paddingRight: spacing.sm,
                   boxSizing: 'border-box'
                 }}>
-                  {(trip && trip.includes ? trip.includes : INCLUDES).map((item, idx) => (
+                  {(trip && trip.includes ? trip.includes : INCLUDES_LOCAL).map((item, idx) => (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, fontSize: fontSize.base }}>
                       <FontAwesomeIcon icon={faCheck} style={{ width: 16 }} />
                       <span>{item}</span>
@@ -472,7 +405,7 @@ export default function BookingPage() {
                   paddingRight: spacing.xs,
                   boxSizing: 'border-box'
                 }}>
-                  {(trip && trip.pickup_points ? trip.pickup_points : PICKUP_POINTS).map((point, idx) => (
+                  {(trip && trip.pickup_points ? trip.pickup_points : PICKUP_LOCAL).map((point, idx) => (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, fontSize: fontSize.base }}>
                       <FontAwesomeIcon icon={faLocationDot} style={{ width: 16 }} />
                       <span>{point}</span>
@@ -604,7 +537,7 @@ export default function BookingPage() {
                 </tr>
               </thead>
               <tbody>
-                {RUNDOWN_DATA[selectedDay].map((item, idx) => (
+                {(RUNDOWN_DATA_LOCAL[selectedDay] || []).map((item, idx) => (
                   <tr key={idx} style={{
                     backgroundColor: idx % 2 === 0 ? 'rgba(255, 255, 255, 0.05)' : 'transparent'
                   }}>
