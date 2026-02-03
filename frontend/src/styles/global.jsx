@@ -176,6 +176,35 @@ export const globalStyles = `
 	.cards-scroll::-webkit-scrollbar-thumb:hover {
 		background: rgba(127, 110, 40, 0.9);
 	}
+
+	/* Left summary panel fixed height with its own scrollbar */
+	.left-panel-fixed {
+		height: 488px;
+		overflow-y: auto;
+		padding-right: ${spacing.sm};
+		box-sizing: border-box;
+		scrollbar-width: thin;
+		scrollbar-color: ${colors.accent4} transparent;
+	}
+
+	.left-panel-fixed::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	.left-panel-fixed::-webkit-scrollbar-track {
+		background: ${colors.accent3}12;
+		border-radius: 10px;
+	}
+
+	.left-panel-fixed::-webkit-scrollbar-thumb {
+		background: ${colors.accent4};
+		border-radius: 10px;
+		transition: background 0.2s ease;
+	}
+
+	.left-panel-fixed::-webkit-scrollbar-thumb:hover {
+		background: ${colors.accent5};
+	}
 `;
 
 export default globalStyles;

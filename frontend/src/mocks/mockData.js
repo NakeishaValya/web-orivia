@@ -24,6 +24,7 @@ export const trips = [
     pickup_points: [
       { location: 'Komodo Airport, Labuan Bajo', price: 0 },
       { location: 'Orivia Agent Gambir, Jakarta', price: 50000 },
+      // { location: 'Orivia Agent Pasteur, Bandung', price: 100000 },
       { location: 'Orivia Agent, NTT', price: 75000 }
     ],
     rundowns: {

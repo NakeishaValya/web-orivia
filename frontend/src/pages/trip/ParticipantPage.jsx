@@ -36,6 +36,39 @@ export default function ParticipantPage() {
     ? Math.max(displayedTrip.pax - confirmedCount, 0)
     : '-';
 
+  // pickup summary computed from trip pickup_points (with prices) and participants
+  const normalize = (s) => String(s || '').trim();
+  const pickupPointsArr = displayedTrip?.pickup_points || [];
+  const pickupPriceMap = {};
+  pickupPointsArr.forEach(pp => { pickupPriceMap[normalize(pp.location)] = pp.price ?? 0; });
+  const pickupCountsMap = {};
+  passengerSample.forEach(p => {
+    const loc = normalize(p.pickup || 'Other');
+    pickupCountsMap[loc] = (pickupCountsMap[loc] || 0) + 1;
+  });
+
+  // Build ordered summary from trip pickup points first, then any extras from participants
+  const pickupSummaryMap = new Map();
+  pickupPointsArr.forEach(pp => {
+    const key = normalize(pp.location);
+    pickupSummaryMap.set(key, { loc: pp.location, count: pickupCountsMap[key] || 0, price: pickupPriceMap[key] || 0 });
+  });
+  Object.keys(pickupCountsMap).forEach(k => {
+    if (!pickupSummaryMap.has(k)) {
+      pickupSummaryMap.set(k, { loc: k, count: pickupCountsMap[k], price: pickupPriceMap[k] || 0 });
+    }
+  });
+  const pickupSummary = Array.from(pickupSummaryMap.values());
+
+  const totalPickupRevenue = pickupSummary.reduce((sum, p) => sum + (p.count * (p.price || 0)), 0);
+  const totalTripRevenue = confirmedCount * (displayedTrip?.price || 0);
+  const totalRevenue = totalTripRevenue + totalPickupRevenue;
+
+  const formatIDR = (v) => {
+    if (typeof v !== 'number') return '-';
+    return 'IDR ' + v.toLocaleString('id-ID');
+  };
+
   const formatISODate = (iso) => {
     if (!iso) return iso;
     const d = new Date(iso);
@@ -186,7 +219,7 @@ export default function ParticipantPage() {
                   <select
                     value={selectedScheduleId || ''}
                     onChange={(e) => setSelectedScheduleId(Number(e.target.value))}
-                    style={{ padding: `${spacing.xs} ${spacing.sm}`, borderRadius: radius.sm, border: `1px solid ${colors.accent5}20`, backgroundColor: colors.bg, cursor: 'pointer' }}
+                    style={{ padding: `${spacing.xs} ${spacing.sm}`, borderRadius: radius.sm, border: `1px solid ${colors.accent5}20`, backgroundColor: colors.accent1, cursor: 'pointer' }}
                   >
                     {schedules.map(s => (
                       <option key={s.id} value={s.id}>{formatDateRange(s.text)}</option>
@@ -264,7 +297,7 @@ export default function ParticipantPage() {
           {/* Side-by-side layout: left summary (fixed width) and right passenger list (fills remaining width) */}
         <div style={{ display: 'flex', gap: spacing.lg, marginTop: spacing.lg, alignItems: 'stretch' }}>
           <div style={{ width: 380, flex: '0 0 380px', display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
-            <div style={card}>
+            <div className="left-panel-fixed custom-scrollbar" style={card}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
                 <div style={smallCard}>
                   <h3 style={{ marginTop: 0, marginBottom: spacing.sm }}>Participant Summary</h3>
@@ -277,19 +310,19 @@ export default function ParticipantPage() {
 
                 <div style={smallCard}>
                   <h3 style={{ marginTop: 0, marginBottom: spacing.sm }}>Pick Up Point Summary</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xs }}>
-                    <div>Orivia Agent Gambir, Jakarta : 6</div>
-                    <div>Orivia Agent Pasteur, Bandung : 1</div>
-                    <div>Soekarno Hatta Airport, Jakarta : 1</div>
-                  </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xs }}>
+                      {pickupSummary.map(p => (
+                        <div key={p.loc}>{p.loc} : {p.count}</div>
+                      ))}
+                    </div>
                 </div>
 
                 <div style={smallCard}>
                   <h3 style={{ marginTop: 0, marginBottom: spacing.sm }}>Financial Summary</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xs }}>
-                    <div>Total Trip Revenue : IDR 63,000,000</div>
-                    <div>Total Pickup Revenue : IDR 8,500,000</div>
-                    <div>Total Revenue : IDR 71,500,000</div>
+                    <div>Total Trip Revenue : {formatIDR(totalTripRevenue)}</div>
+                    <div>Total Pickup Revenue : {formatIDR(totalPickupRevenue)}</div>
+                    <div>Total Revenue : {formatIDR(totalRevenue)}</div>
                   </div>
                 </div>
               </div>
