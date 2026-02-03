@@ -90,32 +90,13 @@ export default function AgentTripPage() {
 
         <div className="cards-scroll" style={{ flex: 1, overflowX: 'hidden' }}>
           <section style={{ ...styles.grid, width: '100%', overflow: 'visible', marginTop: spacing.md }}>
-          {(() => {
-            const grouped = Object.values(trips.reduce((acc, t) => {
-              const key = (t.name || '').trim();
-              if (!acc[key]) acc[key] = [];
-              acc[key].push(t);
-              return acc;
-            }, {}));
-
-            const displayTrips = grouped.map(group => {
-              const base = group[0];
-              return {
-                ...base,
-                id: base.id,
-                date: group.map(g => g.date),
-                duration: undefined
-              };
-            });
-
-            return displayTrips.map(trip => (
+            {trips.map(trip => (
               <GridTripCard
-                key={trip.id}
+                key={trip.tripId}
                 trip={trip}
-                onClick={() => navigate(`/trip/edit?tripId=${trip.id}`)}
+                onClick={() => navigate(`/trip/edit?tripId=${trip.tripId}`)}
               />
-            ));
-          })()}
+            ))}
           </section>
         </div>
       </main>

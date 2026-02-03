@@ -8,7 +8,7 @@ import Button from '../../components/ui/Button';
 import extendAgentBg from '../../assets/images/extendagentbg.jpg';
 import { colors, spacing, radius, fontSize, fontFamily } from '../../styles/variables';
 import { TripCard, ImageUploadCard, InputField, IconButton, AddButton, UploadButton, CardHeader, SectionTitle, ImagePreview, TextLink } from '../../components/ui/Card';
-import { trips, DESTINATION_TYPES } from '../../mocks/mockData';
+import { trips, tripSchedules, DESTINATION_TYPES } from '../../mocks/mockData';
 
 const DEST_OPTIONS = DESTINATION_TYPES || [
   'Island Exploration',
@@ -29,7 +29,7 @@ export default function TripEditPage() {
   let defaultTrip = {};
   if (trips && trips.length > 0) {
     if (qTripId) {
-      defaultTrip = trips.find(t => String(t.id) === String(qTripId)) || trips[0];
+      defaultTrip = trips.find(t => String(t.tripId) === String(qTripId)) || trips[0];
     } else {
       defaultTrip = trips[0];
     }
@@ -43,7 +43,11 @@ export default function TripEditPage() {
   });
   const [tripProvince, setTripProvince] = useState(() => defaultTrip.location?.state || 'East Nusa Tenggara, Indonesia');
   const [tripCountry, setTripCountry] = useState(() => defaultTrip.location?.country || 'Indonesia');
-  const [tripSlot, setTripSlot] = useState(() => (defaultTrip.slotAvailable != null ? String(defaultTrip.slotAvailable) : '8'));
+  const [tripSlot, setTripSlot] = useState(() => {
+    // Get first schedule's slot for this trip
+    const firstSchedule = tripSchedules.find(s => s.tripId === defaultTrip.tripId);
+    return (firstSchedule?.slotAvailable != null ? String(firstSchedule.slotAvailable) : '8');
+  });
   const [tripDay, setTripDay] = useState(() => defaultTrip.duration?.days ? String(defaultTrip.duration.days) : '3');
   const [tripNight, setTripNight] = useState(() => defaultTrip.duration?.nights ? String(defaultTrip.duration.nights) : '2');
   const [tripDestType, setTripDestType] = useState(() => defaultTrip.destinationType || defaultTrip.type || 'Island Exploration');
@@ -65,13 +69,10 @@ export default function TripEditPage() {
   });
   const fileInputRef = useRef(null);
   const [schedules, setSchedules] = useState(() => {
-    if (!defaultTrip || !defaultTrip.name) return [];
-    const sameName = trips.filter(t => t.name === defaultTrip.name);
-    if (sameName.length) {
-      return sameName.map(t => ({ id: t.id, text: `${t.date?.start_date || ''} - ${t.date?.end_date || ''}` }));
-    }
-    if (defaultTrip.date) {
-      return [{ id: defaultTrip.id || 1, text: `${defaultTrip.date.start_date} - ${defaultTrip.date.end_date}` }];
+    if (!defaultTrip || !defaultTrip.tripId) return [];
+    const relatedSchedules = tripSchedules.filter(s => s.tripId === defaultTrip.tripId);
+    if (relatedSchedules.length) {
+      return relatedSchedules.map(s => ({ id: s.scheduleId, text: `${s.start_date || ''} - ${s.end_date || ''}` }));
     }
     return [];
   });

@@ -6,7 +6,7 @@ import Button from '../../components/ui/Button';
 import { TripCard } from '../../components/ui/Card.jsx';
 import { colors, spacing, radius, fontSize, fontFamily } from '../../styles/variables';
 import { useParams } from 'react-router-dom';
-import { trips, TRIP_RUNDOWNS, TRIP_IMAGES, INCLUDES, PICKUP_POINTS } from '../../mocks/mockData.js';
+import { trips, tripSchedules, TRIP_RUNDOWNS, TRIP_IMAGES, INCLUDES, PICKUP_POINTS } from '../../mocks/mockData.js';
 
 const monthNamesID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
@@ -51,7 +51,7 @@ export default function BookingPage() {
   const [isHover, setIsHover] = useState(false);
   const { id } = useParams();
   const tripId = id ? Number(id) : null;
-  const trip = trips.find(t => Number(t.id) === tripId) || null;
+  const trip = trips.find(t => Number(t.tripId) === tripId) || null;
   const TRIP_IMAGES_LOCAL = (trip && trip.images) || TRIP_IMAGES[tripId] || TRIP_IMAGES[1] || [];
   const RUNDOWN_DATA_LOCAL = (trip && trip.rundowns) || TRIP_RUNDOWNS || {};
   const INCLUDES_LOCAL = (trip && trip.includes) || INCLUDES || [];

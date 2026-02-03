@@ -6,7 +6,7 @@ import Navbar from '../../components/ui/Navbar.jsx';
 import Button from '../../components/ui/Button';
 import { GridTripCard, SearchFiltersCard } from '../../components/ui/Card.jsx';
 import { colors, spacing, radius, fontSize, fontFamily } from '../../styles/variables';
-import { trips, DESTINATION_TYPES } from '../../mocks/mockData.js';
+import { trips, tripSchedules, DESTINATION_TYPES } from '../../mocks/mockData.js';
 
 export default function CustomerExplorePage() {
   const navigate = useNavigate();
@@ -32,16 +32,24 @@ export default function CustomerExplorePage() {
     return `Rp ${price.toLocaleString('id-ID')}`;
   };
 
-  // Filter trips by price range (customer only sees ACTIVE trips)
-  const filteredPrice = trips.filter((trip) => {
-    if (trip.status !== 'ACTIVE') return false; // Customer filter
-    const price = Number(trip.price || 0);
+  // Filter schedules by building composite view: trip master + schedule data
+  // Customer only sees ACTIVE schedules
+  const filteredByStatus = tripSchedules.filter(schedule => schedule.status === 'ACTIVE');
+
+  // Filter by price (from trip master)
+  const filteredPrice = filteredByStatus.filter((schedule) => {
+    const trip = trips.find(t => t.tripId === schedule.tripId);
+    const price = Number(trip?.price || 0);
     const min = Number(priceRange?.[0] ?? -Infinity);
     const max = Number(priceRange?.[1] ?? Infinity);
     return price >= min && price <= max;
   });
 
-  const filteredTrips = filteredPrice.filter((trip) => {
+  // Filter by type, duration, dates, location, pax
+  const filteredTrips = filteredPrice.filter((schedule) => {
+    const trip = trips.find(t => t.tripId === schedule.tripId);
+    if (!trip) return false;
+
     // destination type filter
     if (selectedTypes && selectedTypes.length > 0 && !selectedTypes.includes(trip.destinationType)) {
       return false;
@@ -73,27 +81,37 @@ export default function CustomerExplorePage() {
       if (!hay.includes(needle)) return false;
     }
 
-    // Date overlap filter: require trip dates to overlap requested range
+    // Date overlap filter: require schedule dates to overlap requested range
     if (aStart || aEnd) {
       const rqStart = aStart ? new Date(aStart) : null;
       const rqEnd = aEnd ? new Date(aEnd) : null;
 
-      const tripStart = trip.date?.start_date ? new Date(trip.date.start_date) : null;
-      const tripEnd = trip.date?.end_date ? new Date(trip.date.end_date) : null;
+      const scheduleStart = schedule.start_date ? new Date(schedule.start_date) : null;
+      const scheduleEnd = schedule.end_date ? new Date(schedule.end_date) : null;
 
-      if (tripStart && tripEnd) {
+      if (scheduleStart && scheduleEnd) {
         if (rqStart && rqEnd) {
-          // overlap if tripStart <= rqEnd AND tripEnd >= rqStart
-          if (!(tripStart <= rqEnd && tripEnd >= rqStart)) return false;
+          // overlap if scheduleStart <= rqEnd AND scheduleEnd >= rqStart
+          if (!(scheduleStart <= rqEnd && scheduleEnd >= rqStart)) return false;
         } else if (rqStart && !rqEnd) {
-          if (tripEnd < rqStart) return false;
+          if (scheduleEnd < rqStart) return false;
         } else if (!rqStart && rqEnd) {
-          if (tripStart > rqEnd) return false;
+          if (scheduleStart > rqEnd) return false;
         }
       }
     }
 
     return true;
+  }).map(schedule => {
+    // Merge schedule data with trip master for display
+    const trip = trips.find(t => t.tripId === schedule.tripId);
+    return {
+      ...trip,
+      scheduleId: schedule.scheduleId,
+      date: { start_date: schedule.start_date, end_date: schedule.end_date },
+      status: schedule.status,
+      slotAvailable: schedule.slotAvailable
+    };
   });
 
   return (

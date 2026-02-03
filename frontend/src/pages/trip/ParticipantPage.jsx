@@ -6,24 +6,45 @@ import Navbar, { TripTabs } from '../../components/ui/Navbar.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import extendAgentBg from '../../assets/images/extendagentbg.jpg';
+import { trips, tripSchedules, passengers } from '../../mocks/mockData';
+import { useLocation } from 'react-router-dom';
 
 
 export default function ParticipantPage() {
-  const passengerSample = Array.from({ length: 13 }).map((_, i) => {
-    const gender = i % 2 === 0 ? 'Male' : 'Female';
-    return {
-      username: gender === 'Female' ? 'nakeiiiiii23' : `jekiiiii23${i}`,
-      fullname: 'siapa siapa siapa siapa',
-      gender,
-      dob: '07 Mar 2005',
-      nationality: 'Indonesia',
-      pickup: i % 3 === 0 ? 'Orivia Agent Gambir, Jakarta' : i % 3 === 1 ? 'Orivia Agent Pasteur, Bandung' : 'Soekarno Hatta Airport, Jakarta',
-      phone: '08123456789'
-    };
-  });
 
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const qScheduleId = params.get('scheduleId');
+  const defaultSchedule = tripSchedules && tripSchedules.length ? (qScheduleId ? tripSchedules.find(s => String(s.scheduleId) === String(qScheduleId)) : tripSchedules[0]) : null;
+  const defaultTrip = defaultSchedule ? trips.find(t => t.tripId === defaultSchedule.tripId) : (trips && trips.length ? trips[0] : null);
+  const schedules = defaultTrip && tripSchedules ? (
+    tripSchedules.filter(s => s.tripId === defaultTrip.tripId).map(s => ({ id: s.scheduleId, text: `${s.start_date || ''} - ${s.end_date || ''}` }))
+  ) : [];
+
+  const [selectedScheduleId, setSelectedScheduleId] = useState(schedules.length ? schedules[0].id : (defaultSchedule ? defaultSchedule.scheduleId : null));
+  const displayedSchedule = (selectedScheduleId != null) ? (tripSchedules.find(s => Number(s.scheduleId) === Number(selectedScheduleId)) || defaultSchedule) : defaultSchedule;
+  const displayedTrip = displayedSchedule ? trips.find(t => t.tripId === displayedSchedule.tripId) : defaultTrip;
+  const passengerSample = (displayedSchedule && displayedSchedule.participants && displayedSchedule.participants.length) ? displayedSchedule.participants : (passengers || []);
+
+  const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const formatISODate = (iso) => {
+    if (!iso) return iso;
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    const day = d.getDate();
+    const month = monthNames[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day} ${month} ${year}`;
+  };
+  const formatDateRange = (text) => {
+    if (!text || typeof text !== 'string') return text;
+    const m = text.match(/(\d{4}-\d{2}-\d{2})\s*-\s*(\d{4}-\d{2}-\d{2})/);
+    if (m) return `${formatISODate(m[1])} - ${formatISODate(m[2])}`;
+    return text;
+  };
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPassenger, setSelectedPassenger] = useState(null);
+  const [selectedDay, setSelectedDay] = useState(1);
 
   const openPassengerModal = (p) => {
     setSelectedPassenger(p);
@@ -150,17 +171,28 @@ export default function ParticipantPage() {
           <div style={headerLeft}>
             <img src="/src/assets/images/tripexplorebg.png" alt="trip" style={thumb} />
             <div style={titleBlock}>
-              <h2 style={{ margin: 0, color: '#2b2b2b' }}>Labuan Bajo</h2>
-              <div style={subtitle}>2D1N · Island Exploration</div>
-              <div style={{ color: '#7a6a45', marginTop: 6, fontSize: fontSize.sm }}>1–2 February 2026 · East Nusa Tenggara, Indonesia</div>
+              <h2 style={{ margin: 0, color: '#2b2b2b' }}>{displayedTrip?.name || '—'}</h2>
+              <div style={subtitle}>{(displayedTrip?.duration?.days ? `${displayedTrip.duration.days}D` : '')}{(displayedTrip?.duration?.nights ? `${displayedTrip.duration.nights}N` : '')}{displayedTrip?.type || displayedTrip?.destinationType ? ` · ${displayedTrip.type || displayedTrip.destinationType}` : ''}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
+                {schedules.length > 0 && (
+                  <select
+                    value={selectedScheduleId || ''}
+                    onChange={(e) => setSelectedScheduleId(Number(e.target.value))}
+                    style={{ padding: `${spacing.xs} ${spacing.sm}`, borderRadius: radius.sm, border: `1px solid ${colors.accent5}20`, backgroundColor: colors.bg, cursor: 'pointer' }}
+                  >
+                    {schedules.map(s => (
+                      <option key={s.id} value={s.id}>{formatDateRange(s.text)}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
             </div>
           </div>
           <div style={slotBox}>
             <div style={{ color: '#7a6a45', fontWeight: 600 }}>Available Slot</div>
-            <div style={slotBig}>8/15</div>
+            <div style={slotBig}>{displayedTrip?.slotAvailable ?? '-'} / {displayedTrip?.pax ?? '-'}</div>
           </div>
         </div>
-        
         <Modal open={modalOpen} onClose={closePassengerModal} title={''}>
           {selectedPassenger && (
             <>

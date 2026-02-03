@@ -7,29 +7,25 @@ export const DESTINATION_TYPES = [
   'Other'
 ];
 
+// Trip Master Data (static information shared across all schedules)
 export const trips = [
   {
-    id: 1,
+    tripId: 1,
     name: 'Komodo Island',
     description: 'Discover Komodo Island: see Komodo dragons, hike Padar for panoramic views, snorkel at Pink Beach, and enjoy island-hopping with local guides.',
     location: { state: 'East Nusa Tenggara', country: 'Indonesia' },
-    date: { start_date: '2026-02-01', end_date: '2026-02-03' },
     price: 4575000,
     pax: 15,
     duration: { days: 2, nights: 1 },
     image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=500&h=300&fit=crop',
     type: 'Island Exploration',
     destinationType: 'Island Exploration',
-    status: 'ACTIVE',
     includes: ['Guide', 'Meals', 'Entrance Ticket', 'Snorkeling Gear'],
     pickup_points: [
       { location: 'Komodo Airport, Labuan Bajo', price: 0 },
       { location: 'Orivia Agent Gambir, Jakarta', price: 50000 },
-      { location: 'Orivia Agent, NTT', price: 75000 },
-      { location: 'test', price: 0 },
-      { location: 'test', price: 0 }
+      { location: 'Orivia Agent, NTT', price: 75000 }
     ],
-    slotAvailable: 1,
     rundowns: {
       1: [
         { time: '06.00 - 07.00', duration: '1', activity: 'Meeting point & briefing', location: 'Komodo Airport' },
@@ -49,19 +45,16 @@ export const trips = [
     ]
   },
   {
-    id: 2,
+    tripId: 2,
     name: 'Raja Ampat',
     description: 'Raja Ampat offers world-class marine biodiversity: island hopping, snorkeling, and diving among vibrant coral gardens and unique seascapes.',
     location: { state: 'Maluku', country: 'Indonesia' },
-    date: { start_date: '2026-02-01', end_date: '2026-02-03' },
     price: 4175000,
     pax: 15,
     duration: { days: 3, nights: 2 },
     image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=500&h=300&fit=crop',
     type: 'Island Exploration',
     destinationType: 'Island Exploration',
-    status: 'ACTIVE',
-    slotAvailable: 3,
     includes: ['Guide', 'Meals', 'Boat Transfer', 'Diving Equipment'],
     pickup_points: [
       { location: 'Sorong Harbor', price: 0 },
@@ -82,19 +75,16 @@ export const trips = [
     ]
   },
   {
-    id: 3,
+    tripId: 3,
     name: 'Lake Toba',
     description: 'Relax at Lake Toba and explore Samosir Island: scenic stops, traditional Batak villages, and easy-paced cultural excursions around the lake.',
     location: { state: 'North Sumatra', country: 'Indonesia' },
-    date: { start_date: '2026-02-01', end_date: '2026-02-03' },
     price: 4575000,
     pax: 15,
     duration: { days: 4, nights: 3 },
     image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=500&h=300&fit=crop',
     type: 'City Tour',
     destinationType: 'City Tour',
-    status: 'ACTIVE',
-    slotAvailable: 1,
     includes: ['Guide', 'Meals', 'Accommodation', 'Transportation'],
     pickup_points: [
       { location: 'Medan Airport', price: 0 },
@@ -114,19 +104,16 @@ export const trips = [
     ]
   },
   {
-    id: 4,
+    tripId: 4,
     name: 'Bromo Tengger',
     description: 'Experience Mount Bromo sunrise treks and the Tengger caldera: dramatic landscapes, accessible hikes, and memorable off-road transfers.',
     location: { state: 'East Java', country: 'Indonesia' },
-    date: { start_date: '2026-02-05', end_date: '2026-02-07' },
     price: 3250000,
     pax: 12,
     duration: { days: 3, nights: 2 },
     image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=500&h=300&fit=crop',
     type: 'Mount Hiking',
     destinationType: 'Mount Hiking',
-    status: 'DRAFT', // Only visible to agents
-    slotAvailable: 0,
     includes: ['Guide', 'Meals', 'Jeep Transfer'],
     pickup_points: [
       { location: 'Malang Bus Terminal', price: 0 },
@@ -142,19 +129,16 @@ export const trips = [
     ]
   },
   {
-    id: 5,
+    tripId: 5,
     name: 'Belitung Island',
     description: 'Belitung highlights include pristine beaches, granite rock formations, and relaxed island excursions ideal for beachcombing and short boat trips.',
     location: { state: 'Bangka Belitung', country: 'Indonesia' },
-    date: { start_date: '2026-02-10', end_date: '2026-02-12' },
     price: 2800000,
     pax: 20,
     duration: { days: 2, nights: 1 },
     image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=500&h=300&fit=crop',
     type: 'Island Exploration',
     destinationType: 'Island Exploration',
-    status: 'ACTIVE',
-    slotAvailable: 1,
     includes: ['Guide', 'Meals', 'Boat Transfer'],
     pickup_points: [
       { location: 'Tanjung Pandan Pier', price: 0 },
@@ -170,19 +154,16 @@ export const trips = [
     ]
   },
   {
-    id: 6,
+    tripId: 6,
     name: 'Wakatobi Diving',
     description: 'Wakatobi delivers exceptional diving experiences with rich reefs and clear waters; perfect for multi-day dive itineraries and marine exploration.',
     location: { state: 'Southeast Sulawesi', country: 'Indonesia' },
-    date: { start_date: '2026-02-15', end_date: '2026-02-19' },
     price: 6500000,
     pax: 10,
     duration: { days: 5, nights: 4 },
     image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=500&h=300&fit=crop',
     type: 'Wildlife Exploration',
     destinationType: 'Wildlife Exploration',
-    status: 'ACTIVE',
-    slotAvailable: 1,
     includes: ['Guide', 'Meals', 'Diving Equipment', 'Boat Transfer'],
     pickup_points: [
       { location: 'Wakatobi Airport', price: 0 },
@@ -200,138 +181,146 @@ export const trips = [
       'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&h=600&fit=crop&sig=6'
     ]
   }
-  ,
-  // duplicate entries with different dates for testing
+];
+
+// Trip Schedules (date-specific data with slot availability)
+export const tripSchedules = [
   {
-    id: 7,
-    name: 'Komodo Island',
-    description: 'Komodo Island (alternate schedule): similar wildlife and island activities as the main Komodo listing, with different departure dates for flexibility.',
-    location: { state: 'East Nusa Tenggara', country: 'Indonesia' },
-    date: { start_date: '2026-03-15', end_date: '2026-03-17' },
-    price: 4575000,
-    pax: 15,
-    duration: { days: 2, nights: 1 },
-    image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=500&h=300&fit=crop',
-    type: 'Island Exploration',
-    destinationType: 'Island Exploration',
+    scheduleId: 101,
+    tripId: 1,
+    start_date: '2026-02-01',
+    end_date: '2026-02-03',
     status: 'ACTIVE',
     slotAvailable: 1,
-    includes: ['Guide', 'Meals', 'Entrance Ticket'],
-    pickup_points: [
-      { location: 'Komodo Airport, Labuan Bajo', price: 0 }
-    ],
-    rundowns: {
-      1: [
-        { time: '07.00 - 10.00', duration: '3', activity: 'Sailing & snorkeling', location: 'Padar Island' }
-      ]
-    },
-    images: [
-      'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop&sig=7'
+    participants: [
+      {
+        username: 'user100',
+        fullname: 'Ari Santoso',
+        gender: 'Male',
+        dob: '1990-03-07',
+        nationality: 'Indonesia',
+        pickup: 'Komodo Airport, Labuan Bajo',
+        phone: '0812-345-0001'
+      },
+      {
+        username: 'user101',
+        fullname: 'Siti Rahma',
+        gender: 'Female',
+        dob: '1995-08-21',
+        nationality: 'Indonesia',
+        pickup: 'Orivia Agent Gambir, Jakarta',
+        phone: '0812-345-0002'
+      },
+      {
+        username: 'user102',
+        fullname: 'Budi Prasetyo',
+        gender: 'Male',
+        dob: '1988-11-02',
+        nationality: 'Indonesia',
+        pickup: 'Orivia Agent Gambir, Jakarta',
+        phone: '0812-345-0003'
+      }
     ]
   },
   {
-    id: 8,
-    name: 'Raja Ampat',
-    description: 'Alternate Raja Ampat schedule: enjoy island hopping and snorkeling across protected marine areas with local boat transfers and guides.',
-    location: { state: 'Maluku', country: 'Indonesia' },
-    date: { start_date: '2026-04-10', end_date: '2026-04-12' },
-    price: 4175000,
-    pax: 15,
-    duration: { days: 3, nights: 2 },
-    image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=500&h=300&fit=crop',
-    type: 'Island Exploration',
-    destinationType: 'Island Exploration',
+    scheduleId: 102,
+    tripId: 1,
+    start_date: '2026-03-15',
+    end_date: '2026-03-17',
     status: 'ACTIVE',
-    slotAvailable: 1,
-    includes: ['Guide', 'Meals', 'Boat Transfer'],
-    pickup_points: [
-      { location: 'Sorong Harbor', price: 0 }
-    ],
-    rundowns: {
-      1: [
-        { time: '08.00 - 12.00', duration: '4', activity: 'Island hopping', location: 'Raja Ampat' }
-      ]
-    },
-    images: [
-      'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&h=600&fit=crop&sig=8'
+    slotAvailable: 5
+  },
+  {
+    scheduleId: 201,
+    tripId: 2,
+    start_date: '2026-02-01',
+    end_date: '2026-02-03',
+    status: 'ACTIVE',
+    slotAvailable: 3,
+    participants: [
+      {
+        username: 'user200',
+        fullname: 'Rina Marlina',
+        gender: 'Female',
+        dob: '1993-02-18',
+        nationality: 'Indonesia',
+        pickup: 'Sorong Harbor',
+        phone: '0812-555-0200'
+      },
+      {
+        username: 'user201',
+        fullname: 'Andi Wijaya',
+        gender: 'Male',
+        dob: '1987-09-30',
+        nationality: 'Indonesia',
+        pickup: 'Raja Ampat Domestic Air',
+        phone: '0812-555-0201'
+      }
     ]
   },
   {
-    id: 9,
-    name: 'Lake Toba',
-    description: 'Alternate Lake Toba schedule: includes guided visits to cultural points on Samosir Island and gentle exploration of the lake shoreline.',
-    location: { state: 'North Sumatra', country: 'Indonesia' },
-    date: { start_date: '2026-05-20', end_date: '2026-05-23' },
-    price: 4575000,
-    pax: 15,
-    duration: { days: 4, nights: 3 },
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=500&h=300&fit=crop',
-    type: 'City Tour',
-    destinationType: 'City Tour',
+    scheduleId: 202,
+    tripId: 2,
+    start_date: '2026-04-10',
+    end_date: '2026-04-12',
     status: 'ACTIVE',
-    slotAvailable: 1,
-    includes: ['Guide', 'Meals', 'Accommodation'],
-    pickup_points: [
-      { location: 'Medan Airport', price: 0 }
-    ],
-    rundowns: {
-      1: [
-        { time: '09.00 - 12.00', duration: '3', activity: 'Explore Beach', location: 'Samosir' }
-      ]
-    },
-    images: [
-      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop&sig=9'
-    ]
+    slotAvailable: 4
   },
   {
-    id: 10,
-    name: 'Bromo Tengger',
-    description: 'Alternate Bromo schedule: focused on sunrise trekking with simpler logistics and small-group jeep transfers.',
-    location: { state: 'East Java', country: 'Indonesia' },
-    date: { start_date: '2026-06-01', end_date: '2026-06-03' },
-    price: 3250000,
-    pax: 12,
-    duration: { days: 3, nights: 2 },
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=500&h=300&fit=crop',
-    type: 'Mount Hiking',
-    destinationType: 'Mount Hiking',
+    scheduleId: 301,
+    tripId: 3,
+    start_date: '2026-02-01',
+    end_date: '2026-02-04',
+    status: 'ACTIVE',
+    slotAvailable: 1
+  },
+  {
+    scheduleId: 302,
+    tripId: 3,
+    start_date: '2026-05-20',
+    end_date: '2026-05-23',
+    status: 'ACTIVE',
+    slotAvailable: 2
+  },
+  {
+    scheduleId: 401,
+    tripId: 4,
+    start_date: '2026-02-05',
+    end_date: '2026-02-07',
     status: 'DRAFT',
-    slotAvailable: 1,
-    includes: ['Guide', 'Meals', 'Jeep Transfer'],
-    pickup_points: [
-      { location: 'Malang Bus Terminal', price: 0 }
-    ],
-    rundowns: {
-      1: [ { time: '03.00 - 06.00', duration: '3', activity: 'Sunrise trek', location: 'Mount Bromo' } ]
-    },
-    images: [
-      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop&sig=10'
-    ]
+    slotAvailable: 0
   },
   {
-    id: 11,
-    name: 'Belitung Island',
-    description: 'Alternate Belitung schedule: short beach-focused itinerary highlighting Tanjung Tinggi and nearby islets for relaxed coastal exploration.',
-    location: { state: 'Bangka Belitung', country: 'Indonesia' },
-    date: { start_date: '2026-07-10', end_date: '2026-07-12' },
-    price: 2800000,
-    pax: 20,
-    duration: { days: 2, nights: 1 },
-    image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=500&h=300&fit=crop',
-    type: 'Island Exploration',
-    destinationType: 'Island Exploration',
+    scheduleId: 402,
+    tripId: 4,
+    start_date: '2026-06-01',
+    end_date: '2026-06-03',
+    status: 'DRAFT',
+    slotAvailable: 3
+  },
+  {
+    scheduleId: 501,
+    tripId: 5,
+    start_date: '2026-02-10',
+    end_date: '2026-02-12',
     status: 'ACTIVE',
-    slotAvailable: 1,
-    includes: ['Guide', 'Meals', 'Boat Transfer'],
-    pickup_points: [
-      { location: 'Tanjung Pandan Pier', price: 0 }
-    ],
-    rundowns: {
-      1: [ { time: '08.00 - 10.00', duration: '2', activity: 'Beach visit', location: 'Tanjung Tinggi' } ]
-    },
-    images: [
-      'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop&sig=11'
-    ]
+    slotAvailable: 1
+  },
+  {
+    scheduleId: 502,
+    tripId: 5,
+    start_date: '2026-07-10',
+    end_date: '2026-07-12',
+    status: 'ACTIVE',
+    slotAvailable: 2
+  },
+  {
+    scheduleId: 601,
+    tripId: 6,
+    start_date: '2026-02-15',
+    end_date: '2026-02-19',
+    status: 'ACTIVE',
+    slotAvailable: 1
   }
 ];
 
@@ -403,6 +392,7 @@ export const PICKUP_POINTS = [
 
 export default {
   trips,
+  tripSchedules,
   passengers,
   users,
   bookings,

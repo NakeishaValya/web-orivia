@@ -2,6 +2,7 @@ import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash, faTag, faUser, faLocationDot, faCalendar, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import Button from './Button';
+import { tripSchedules } from '../../mocks/mockData';
 import {
   colors,
   spacing,
@@ -398,12 +399,16 @@ export const GridTripCard = ({ trip = {}, onClick, style = {} }) => {
 					<div style={{ fontSize: fontSize.xs, color: colors.text }}>
 						<FontAwesomeIcon icon={faCalendar} size="sm" style={{ marginRight: spacing.xs }} />
 						{(function(){
+							const scheduleCount = tripSchedules ? tripSchedules.filter(s => s.tripId === trip.tripId).length : 0;
+							
+							if (scheduleCount > 0) {
+								return `${scheduleCount} schedule${scheduleCount > 1 ? 's' : ''}`;
+							}
+							
 							const ranges = getDateRanges(trip);
-							// If `date` is an array (AgentPage uses array of ranges), show how many ranges there are.
 							if (Array.isArray(trip.date)) {
 								return `${ranges.length} dates`;
 							}
-							// If there's at least one range (CustomerPage uses single object), show the first range as formatted dates.
 							if (ranges.length > 0) {
 								const r = ranges[0];
 								return formatDateRange(r.start, r.end, '');
