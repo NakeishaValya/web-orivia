@@ -20,13 +20,22 @@ export default function ParticipantPage() {
   const schedules = defaultTrip && tripSchedules ? (
     tripSchedules.filter(s => s.tripId === defaultTrip.tripId).map(s => ({ id: s.scheduleId, text: `${s.start_date || ''} - ${s.end_date || ''}` }))
   ) : [];
-
   const [selectedScheduleId, setSelectedScheduleId] = useState(schedules.length ? schedules[0].id : (defaultSchedule ? defaultSchedule.scheduleId : null));
   const displayedSchedule = (selectedScheduleId != null) ? (tripSchedules.find(s => Number(s.scheduleId) === Number(selectedScheduleId)) || defaultSchedule) : defaultSchedule;
   const displayedTrip = displayedSchedule ? trips.find(t => t.tripId === displayedSchedule.tripId) : defaultTrip;
   const passengerSample = (displayedSchedule && displayedSchedule.participants && displayedSchedule.participants.length) ? displayedSchedule.participants : (passengers || []);
-
   const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+  // computed participant / capacity values
+  // `totalParticipants` should represent trip capacity (`pax`),
+  // while `confirmedCount` is the number of participants on the selected schedule.
+  const totalParticipants = displayedTrip?.pax ?? '-';
+  const confirmedCount = passengerSample.length;
+  const capacity = displayedTrip?.pax ?? '-';
+  const availableSlots = (typeof displayedTrip?.pax === 'number')
+    ? Math.max(displayedTrip.pax - confirmedCount, 0)
+    : '-';
+
   const formatISODate = (iso) => {
     if (!iso) return iso;
     const d = new Date(iso);
@@ -56,7 +65,6 @@ export default function ParticipantPage() {
     setModalOpen(false);
   };
 
-  // helper to calculate age (years) from a DOB string
   const calculateAge = (dobStr) => {
     if (!dobStr) return '-';
     const d = new Date(dobStr);
@@ -123,20 +131,20 @@ export default function ParticipantPage() {
 
   const headerLeft = {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'stretch',
     gap: spacing.md
   };
 
   const thumb = {
-    width: 88,
-    height: 88,
+    width: 100.8,
+    height: 100.8,
     borderRadius: radius.md,
     objectFit: 'cover',
     boxShadow: '0 6px 18px rgba(8,15,20,0.06)'
   };
 
   const titleBlock = { display: 'flex', flexDirection: 'column' };
-  const subtitle = { color: '#5b5b5b', fontSize: fontSize.sm, marginTop: 4 };
+  const subtitle = { color: '#5b5b5b', fontSize: fontSize.sm, marginTop: spacing.sm };
   const slotBox = { textAlign: 'right' };
   const slotBig = { fontSize: fontSize.xl, fontWeight: 800, color: colors.accent5 };
 
@@ -169,11 +177,11 @@ export default function ParticipantPage() {
 
         <div style={header}>
           <div style={headerLeft}>
-            <img src="/src/assets/images/tripexplorebg.png" alt="trip" style={thumb} />
+            <img src={displayedTrip?.image || (displayedTrip?.images && displayedTrip.images[0]) || '/src/assets/images/tripexplorebg.png'} alt="trip" style={thumb} />
             <div style={titleBlock}>
               <h2 style={{ margin: 0, color: '#2b2b2b' }}>{displayedTrip?.name || '—'}</h2>
-              <div style={subtitle}>{(displayedTrip?.duration?.days ? `${displayedTrip.duration.days}D` : '')}{(displayedTrip?.duration?.nights ? `${displayedTrip.duration.nights}N` : '')}{displayedTrip?.type || displayedTrip?.destinationType ? ` · ${displayedTrip.type || displayedTrip.destinationType}` : ''}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
+              <div style={subtitle}>{displayedTrip?.location?.state ? `${displayedTrip.location.state}` : ''}{(displayedTrip?.duration?.days || displayedTrip?.duration?.nights || displayedTrip?.type || displayedTrip?.destinationType) ? (displayedTrip?.location?.state ? ' · ' : '') : ''}{(displayedTrip?.duration?.days ? `${displayedTrip.duration.days}D` : '')}{(displayedTrip?.duration?.nights ? `${displayedTrip.duration.nights}N` : '')}{displayedTrip?.type || displayedTrip?.destinationType ? ` · ${displayedTrip.type || displayedTrip.destinationType}` : ''}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, paddingTop: spacing.sm }}>
                 {schedules.length > 0 && (
                   <select
                     value={selectedScheduleId || ''}
@@ -190,7 +198,7 @@ export default function ParticipantPage() {
           </div>
           <div style={slotBox}>
             <div style={{ color: '#7a6a45', fontWeight: 600 }}>Available Slot</div>
-            <div style={slotBig}>{displayedTrip?.slotAvailable ?? '-'} / {displayedTrip?.pax ?? '-'}</div>
+            <div style={slotBig}>{availableSlots} / {displayedTrip?.pax ?? '-'}</div>
           </div>
         </div>
         <Modal open={modalOpen} onClose={closePassengerModal} title={''}>
@@ -253,7 +261,7 @@ export default function ParticipantPage() {
             </>
           )}
         </Modal>
-        {/* Side-by-side layout: left summary (fixed width) and right passenger list (fills remaining width) */}
+          {/* Side-by-side layout: left summary (fixed width) and right passenger list (fills remaining width) */}
         <div style={{ display: 'flex', gap: spacing.lg, marginTop: spacing.lg, alignItems: 'stretch' }}>
           <div style={{ width: 380, flex: '0 0 380px', display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
             <div style={card}>
@@ -261,10 +269,10 @@ export default function ParticipantPage() {
                 <div style={smallCard}>
                   <h3 style={{ marginTop: 0, marginBottom: spacing.sm }}>Participant Summary</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
-                    <div>Total Participant : 15</div>
-                    <div>Confirmed : 8</div>
-                    <div>Available Slots : 7</div>
-                  </div>
+                      <div>Total Participant : {totalParticipants}</div>
+                      <div>Confirmed : {confirmedCount}</div>
+                      <div>Available Slots : {availableSlots}</div>
+                    </div>
                 </div>
 
                 <div style={smallCard}>

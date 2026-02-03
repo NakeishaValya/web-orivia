@@ -191,7 +191,7 @@ export const tripSchedules = [
     start_date: '2026-02-01',
     end_date: '2026-02-03',
     status: 'ACTIVE',
-    slotAvailable: 1,
+    slotAvailable: 12,
     participants: [
       {
         username: 'user100',
@@ -228,7 +228,27 @@ export const tripSchedules = [
     start_date: '2026-03-15',
     end_date: '2026-03-17',
     status: 'ACTIVE',
-    slotAvailable: 5
+    slotAvailable: 13,
+    participants: [
+      {
+        username: 'user200',
+        fullname: 'Rina Marlina',
+        gender: 'Female',
+        dob: '1993-02-18',
+        nationality: 'Indonesia',
+        pickup: 'Komodo Airport, Labuan Bajo',
+        phone: '0812-555-0200'
+      },
+      {
+        username: 'user201',
+        fullname: 'Andi Wijaya',
+        gender: 'Male',
+        dob: '1987-09-30',
+        nationality: 'Indonesia',
+        pickup: 'Orivia Agent Gambir, Jakarta',
+        phone: '0812-555-0201'
+      }
+    ]
   },
   {
     scheduleId: 201,
@@ -236,7 +256,7 @@ export const tripSchedules = [
     start_date: '2026-02-01',
     end_date: '2026-02-03',
     status: 'ACTIVE',
-    slotAvailable: 3,
+    slotAvailable: 13,
     participants: [
       {
         username: 'user200',
@@ -264,7 +284,7 @@ export const tripSchedules = [
     start_date: '2026-04-10',
     end_date: '2026-04-12',
     status: 'ACTIVE',
-    slotAvailable: 4
+    slotAvailable: 15
   },
   {
     scheduleId: 301,
@@ -272,7 +292,7 @@ export const tripSchedules = [
     start_date: '2026-02-01',
     end_date: '2026-02-04',
     status: 'ACTIVE',
-    slotAvailable: 1
+    slotAvailable: 15
   },
   {
     scheduleId: 302,
@@ -280,7 +300,7 @@ export const tripSchedules = [
     start_date: '2026-05-20',
     end_date: '2026-05-23',
     status: 'ACTIVE',
-    slotAvailable: 2
+    slotAvailable: 15
   },
   {
     scheduleId: 401,
@@ -288,7 +308,7 @@ export const tripSchedules = [
     start_date: '2026-02-05',
     end_date: '2026-02-07',
     status: 'DRAFT',
-    slotAvailable: 0
+    slotAvailable: 12
   },
   {
     scheduleId: 402,
@@ -296,7 +316,7 @@ export const tripSchedules = [
     start_date: '2026-06-01',
     end_date: '2026-06-03',
     status: 'DRAFT',
-    slotAvailable: 3
+    slotAvailable: 12
   },
   {
     scheduleId: 501,
@@ -304,7 +324,7 @@ export const tripSchedules = [
     start_date: '2026-02-10',
     end_date: '2026-02-12',
     status: 'ACTIVE',
-    slotAvailable: 1
+    slotAvailable: 20
   },
   {
     scheduleId: 502,
@@ -312,7 +332,7 @@ export const tripSchedules = [
     start_date: '2026-07-10',
     end_date: '2026-07-12',
     status: 'ACTIVE',
-    slotAvailable: 2
+    slotAvailable: 20
   },
   {
     scheduleId: 601,
@@ -320,7 +340,7 @@ export const tripSchedules = [
     start_date: '2026-02-15',
     end_date: '2026-02-19',
     status: 'ACTIVE',
-    slotAvailable: 1
+    slotAvailable: 10
   }
 ];
 
