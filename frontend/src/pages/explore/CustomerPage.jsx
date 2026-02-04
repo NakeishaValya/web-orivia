@@ -10,7 +10,7 @@ import { trips, tripSchedules, DESTINATION_TYPES } from '../../mocks/mockData.js
 
 export default function CustomerExplorePage() {
   const navigate = useNavigate();
-  const [priceRange, setPriceRange] = useState(null);
+  const [priceRange, setPriceRange] = useState([0, 10000000]);
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [selectedDays, setSelectedDays] = useState('');
   const [selectedNights, setSelectedNights] = useState('');
@@ -130,10 +130,10 @@ export default function CustomerExplorePage() {
             <h3 style={{ color: colors.bg, fontSize: fontSize.lg, fontWeight: 700, marginBottom: spacing.md, fontFamily: fontFamily.base }}>Price Range</h3>
             <input
               type="range"
-              min="500000"
+              min="0"
               max="10000000"
               step="100000"
-              value={priceRange?.[0] ?? 500000}
+              value={priceRange?.[0] ?? 0}
               onChange={(e) => setPriceRange([Number(e.target.value), priceRange?.[1] ?? 10000000])}
               style={{
                 width: '100%',
@@ -143,11 +143,11 @@ export default function CustomerExplorePage() {
             />
             <input
               type="range"
-              min="500000"
+              min="0"
               max="10000000"
               step="100000"
               value={priceRange?.[1] ?? 10000000}
-              onChange={(e) => setPriceRange([priceRange?.[0] ?? 500000, Number(e.target.value)])}
+              onChange={(e) => setPriceRange([priceRange?.[0] ?? 0, Number(e.target.value)])}
               style={{
                 width: '100%',
                 marginBottom: spacing.sm,
