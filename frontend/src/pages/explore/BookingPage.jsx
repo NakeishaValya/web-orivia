@@ -29,7 +29,7 @@ const formatDateRange = (startIso, endIso) => {
 const formatRupiah = (value) => {
   if (value == null) return '';
   try {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 2 }).format(Number(value));
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(value));
   } catch (e) {
     return String(value);
   }
@@ -50,9 +50,13 @@ export default function BookingPage() {
   const touchEndX = useRef(null);
   const [isHover, setIsHover] = useState(false);
   const { id } = useParams();
-  const tripId = id ? Number(id) : null;
-  const trip = trips.find(t => Number(t.tripId) === tripId) || null;
-  const TRIP_IMAGES_LOCAL = (trip && trip.images) || TRIP_IMAGES[tripId] || TRIP_IMAGES[1] || [];
+  const routeId = id ? Number(id) : null;
+  // routeId represents scheduleId when navigated from CustomerPage
+  const schedule = routeId != null ? (tripSchedules.find(s => Number(s.scheduleId) === Number(routeId)) || null) : null;
+  const trip = schedule
+    ? trips.find(t => Number(t.tripId) === Number(schedule.tripId)) || null
+    : (routeId != null ? trips.find(t => Number(t.tripId) === Number(routeId)) || null : null);
+  const TRIP_IMAGES_LOCAL = (trip && trip.images) || TRIP_IMAGES[trip?.tripId] || TRIP_IMAGES[1] || [];
   const RUNDOWN_DATA_LOCAL = (trip && trip.rundowns) || TRIP_RUNDOWNS || {};
   const INCLUDES_LOCAL = (trip && trip.includes) || INCLUDES || [];
   const PICKUP_LOCAL = (trip && trip.pickup_points) || PICKUP_POINTS || [];
@@ -260,15 +264,16 @@ export default function BookingPage() {
                 </p>
               </div>
 
-              <div style={{ minWidth: 220, maxWidth: 300 }}>
+              <div style={{ minWidth: 265, maxWidth: 300 }}>
                 <div style={{
                   padding: spacing.lg,
                   borderRadius: radius.lg,
+                  backgroundColor: colors.bg,
                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
                 }}>
                   <div style={{
                     fontSize: fontSize.sm,
-                    color: colors.accent2,
+                    color: colors.accent5,
                     marginBottom: spacing.xs
                   }}>
                     Starting from
@@ -276,7 +281,7 @@ export default function BookingPage() {
                   <div style={{
                     fontSize: '24px',
                     fontWeight: 700,
-                    color: colors.accent1,
+                    color: colors.accent5,
                     marginBottom: spacing.md
                   }}>
                     {formatRupiah(trip?.price)}<span style={{ fontSize: fontSize.lg, fontWeight: 600 }}>/pax</span>
@@ -335,7 +340,7 @@ export default function BookingPage() {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, fontSize: fontSize.base }}>
                     <FontAwesomeIcon icon={faCalendar} />
-                    <span>{trip ? formatDateRange(trip.date.start_date, trip.date.end_date) : formatDateRange('2026-02-01','2026-02-02')}</span>
+                    <span>{schedule ? formatDateRange(schedule.start_date, schedule.end_date) : formatDateRange('2026-02-01','2026-02-02')}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, fontSize: fontSize.base }}>
                     <FontAwesomeIcon icon={faLocationDot} />
@@ -343,7 +348,7 @@ export default function BookingPage() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, fontSize: fontSize.base }}>
                     <FontAwesomeIcon icon={faUsers} />
-                    <span>{trip ? `${trip.slotAvailable}/${trip.pax} Slots Available` : '8/15 Slots Available'}</span>
+                    <span>{schedule ? `${schedule.slotAvailable ?? '-'} / ${trip?.pax ?? '-' } Slots Available` : `${trip?.pax ?? '-'} Slots Available`}</span>
                   </div>
                 </div>
               </TripCard>
@@ -408,7 +413,11 @@ export default function BookingPage() {
                   {(trip && trip.pickup_points ? trip.pickup_points : PICKUP_LOCAL).map((point, idx) => (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, fontSize: fontSize.base }}>
                       <FontAwesomeIcon icon={faLocationDot} style={{ width: 16 }} />
-                      <span>{point}</span>
+                      <span>
+                        {typeof point === 'string'
+                          ? point
+                          : `${point.location || ''}`}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -493,14 +502,14 @@ export default function BookingPage() {
               borderCollapse: 'collapse'
             }}>
               <thead>
-                <tr style={{ backgroundColor: 'rgba(117, 121, 91, 0.9)' }}>
+                <tr style={{ backgroundColor: colors.accent5 }}>
                   <th style={{
                     padding: spacing.md,
-                    textAlign: 'left',
+                    textAlign: 'center',
                     color: colors.bg,
                     fontSize: fontSize.base,
                     fontWeight: 700,
-                    borderBottom: `3px solid ${colors.accent4}`
+                    borderBottom: `3px solid ${colors.accent5}`
                   }}>
                     Time
                   </th>
@@ -510,27 +519,27 @@ export default function BookingPage() {
                     color: colors.bg,
                     fontSize: fontSize.base,
                     fontWeight: 700,
-                    borderBottom: `3px solid ${colors.accent4}`
+                    borderBottom: `3px solid ${colors.accent5}`
                   }}>
                     Duration (hrs)
                   </th>
                   <th style={{
                     padding: spacing.md,
-                    textAlign: 'left',
+                    textAlign: 'center',
                     color: colors.bg,
                     fontSize: fontSize.base,
                     fontWeight: 700,
-                    borderBottom: `3px solid ${colors.accent4}`
+                    borderBottom: `3px solid ${colors.accent5}`
                   }}>
                     Activity
                   </th>
                   <th style={{
                     padding: spacing.md,
-                    textAlign: 'left',
+                    textAlign: 'center',
                     color: colors.bg,
                     fontSize: fontSize.base,
                     fontWeight: 700,
-                    borderBottom: `3px solid ${colors.accent4}`
+                    borderBottom: `3px solid ${colors.accent5}`
                   }}>
                     Location
                   </th>
@@ -544,6 +553,7 @@ export default function BookingPage() {
                     <td style={{
                       padding: spacing.md,
                       color: colors.bg,
+                      textAlign: 'center',
                       fontSize: fontSize.base,
                       borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
                     }}>
@@ -552,6 +562,7 @@ export default function BookingPage() {
                     <td style={{
                       padding: spacing.md,
                       color: colors.bg,
+                      textAlign: 'center',
                       fontSize: fontSize.base,
                       textAlign: 'center',
                       borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
@@ -561,6 +572,7 @@ export default function BookingPage() {
                     <td style={{
                       padding: spacing.md,
                       color: colors.bg,
+                      textAlign: 'center',
                       fontSize: fontSize.base,
                       borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
                     }}>
@@ -569,6 +581,7 @@ export default function BookingPage() {
                     <td style={{
                       padding: spacing.md,
                       color: colors.bg,
+                      textAlign: 'center',
                       fontSize: fontSize.base,
                       borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
                     }}>
