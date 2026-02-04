@@ -30,6 +30,36 @@ const Card = ({ children, style = {}, ...props }) => {
   );
 };
 
+export const FeatureCard = ({ icon, title, description, style = {} }) => {
+  const featureCardStyle = {
+    flex: 1,
+    maxWidth: 480,
+    backgroundColor: '#F5F1E8',
+    borderRadius: 20,
+    padding: 40,
+    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    textAlign: 'center',
+    ...style,
+  };
+
+  return (
+    <div style={featureCardStyle}>
+      <div style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#FADD9B', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, boxShadow: '0 4px 12px rgba(250,221,155,0.3)' }}>
+        <FontAwesomeIcon icon={icon} style={{ fontSize: 44, color: '#0D2E3F' }} />
+      </div>
+      <h3 style={{ margin: 0, marginBottom: 16, color: '#0D2E3F', fontFamily: 'Poppins, sans-serif', fontSize: 24, fontWeight: 700 }}>
+        {title}
+      </h3>
+      <p style={{ margin: 0, color: '#0D2E3F', fontFamily: 'Lora, serif', fontSize: 17, lineHeight: 1.6, opacity: 0.85 }}>
+        {description}
+      </p>
+    </div>
+  );
+};
+
 export const AuthCard = ({ children, style = {}, image, imageWrapperStyle = {}, imageSectionStyle = {}, ...props }) => {
   const authStyle = {
     position: 'relative',
