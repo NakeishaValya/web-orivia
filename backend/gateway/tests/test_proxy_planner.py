@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 from django.conf import settings
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
-from users.models import User
+from users.models import User, UserRole
 import requests
 
 @pytest.fixture
@@ -11,12 +11,12 @@ def api_client():
     return APIClient()
 
 @pytest.fixture
-def user():
+def user(db):
     return User.objects.create_user(
         username="planneruser",
         email="planner@example.com",
         password="password123",
-        role="CUSTOMER"
+        role=UserRole.TRAVEL_AGENT
     )
 
 @pytest.fixture
@@ -170,18 +170,11 @@ class TestTravelPlannerGateway:
 
     def test_proxy_unauthorized(self, api_client):
         """Test that unauthenticated requests are blocked"""
-        # Mock the request to prevent actual connection attempt
-        with patch('gateway.views.requests.request') as mock_request:
-            mock_response = MagicMock()
-            mock_response.status_code = 401
-            mock_response.content = b'{"detail": "Authentication credentials were not provided."}'
-            mock_response.headers = {'Content-Type': 'application/json'}
-            mock_request.return_value = mock_response
+        # Mock the request to prevent actual connection attempt    
+        response = api_client.post('/api/planner/itineraries/', {}, format='json')
             
-            response = api_client.post('/api/planner/itineraries/', {}, format='json')
-            
-            assert response.status_code == 401
-            assert b"Authentication" in response.content or b"credentials" in response.content
+        assert response.status_code == 401
+        assert b"Authentication" in response.content or b"credentials" in response.content
 
     def test_proxy_connection_error(self, api_client, user, auth_token):
         """Test Travel Planner service connection error returns 503"""
