@@ -5,7 +5,7 @@ import Navbar from '../../components/ui/Navbar.jsx';
 import Button from '../../components/ui/Button';
 import { TripCard } from '../../components/ui/Card.jsx';
 import { colors, spacing, radius, fontSize, fontFamily } from '../../styles/variables';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { trips, tripSchedules, TRIP_RUNDOWNS, TRIP_IMAGES, INCLUDES, PICKUP_POINTS } from '../../mocks/mockData.js';
 
 const monthNamesID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -45,6 +45,7 @@ const formatDurationText = (duration) => {
 
 export default function BookingPage() {
   const [selectedDay, setSelectedDay] = useState(1);
+  const navigate = useNavigate();
   const [imgIndex, setImgIndex] = useState(0);
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
@@ -298,6 +299,7 @@ export default function BookingPage() {
                       justifyContent: 'center',
                       gap: spacing.sm
                     }}
+                    onClick={() => navigate('/explore/booking/checkout/details')}
                   >
                     <FontAwesomeIcon icon={faCheck} />
                     Book Trip
@@ -564,7 +566,6 @@ export default function BookingPage() {
                       color: colors.bg,
                       textAlign: 'center',
                       fontSize: fontSize.base,
-                      textAlign: 'center',
                       borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
                     }}>
                       {item.duration}
