@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react'
 import tripexplore from '../../assets/images/tripexplorebg.png'
 import Navbar from '../../components/ui/Navbar.jsx'
 import Button from '../../components/ui/Button'
-import Card, { TripCard } from '../../components/ui/Card.jsx'
+import Card, { TripCard, IconButton } from '../../components/ui/Card.jsx'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faChevronLeft, faChevronRight, faDownload, faCreditCard, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 import { colors, spacing, radius, fontSize, shadows, fontFamily } from '../../styles/variables.jsx'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
+import { trips, tripSchedules } from '../../mocks/mockData'
 import countryList from 'react-select-country-list'
 import ovoLogo from '../../assets/logo/ovo.png'
 import gopayLogo from '../../assets/logo/gopay.png'
@@ -13,7 +16,7 @@ import qrisLogo from '../../assets/logo/qris.png'
 const styles = {
 		page: {
 			minHeight: '100vh',
-			background: `linear-gradient(180deg, ${colors.accent1}22 0%, ${colors.accent2}11 100%)`,
+			backgroundImage: 'url("https://images.unsplash.com/photo-1584715625116-c1dbbfcf19be?q=80&w=2000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")',
 			fontFamily: fontFamily.base
 		},
 		container: {
@@ -68,6 +71,9 @@ const styles = {
 	}
 
 	const CheckoutPage = () => {
+
+
+
 		const dummyData = [
 			{
 				firstName: 'Nakeisha',
@@ -76,7 +82,7 @@ const styles = {
 				nationality: 'Indonesia',
 				dob: '2006-06-29',
 				gender: 'Female',
-				pickup: 'pasteur',
+				pickup: '',
 				notes: 'I prefer a window seat during transportation if available, prefer a lower bunk for sleeping arrangements, and have food allergies to peanuts and shrimp.'
 			},
 			{
@@ -86,7 +92,7 @@ const styles = {
 				nationality: 'Indonesia',
 				dob: '2005-03-07',
 				gender: 'Male',
-				pickup: 'gambir',
+				pickup: '',
 				notes: ''
 			}
 		]
@@ -99,7 +105,7 @@ const styles = {
 		useEffect(() => {
 		// Ensure data array matches passengers count
 		setData((prev) => {
-			const defaults = { firstName: '', lastName: '', phone: '', nationality: '', dob: '', gender: '', pickup: 'gambir', notes: '' }
+			const defaults = { firstName: '', lastName: '', phone: '', nationality: '', dob: '', gender: '', pickup: '', notes: '' }
 			const next = prev.map((p) => ({ ...defaults, ...p }))
 			while (next.length < passengers) next.push({ ...defaults })
 			while (next.length > passengers) next.pop()
@@ -128,15 +134,59 @@ const styles = {
 	const [activeStep, setActiveStep] = useState(0)
 	const [paymentMethod, setPaymentMethod] = useState('')
 
+	const location = useLocation()
+	const [selectedTrip, setSelectedTrip] = useState(null)
+	const [selectedSchedule, setSelectedSchedule] = useState(null)
+
+	useEffect(() => {
+		// Prefer location.state values, then query params
+		let tripId = null
+		let scheduleId = null
+		if (location && location.state) {
+			scheduleId = location.state.scheduleId || location.state.schedule || null
+			tripId = location.state.tripId || null
+		}
+		const qp = new URLSearchParams(location.search)
+		if (!tripId && qp.get('tripId')) tripId = Number(qp.get('tripId'))
+		if (!scheduleId && qp.get('scheduleId')) scheduleId = Number(qp.get('scheduleId'))
+
+		if (scheduleId && !tripId) {
+			const sched = tripSchedules.find((s) => Number(s.scheduleId) === Number(scheduleId))
+			if (sched) tripId = Number(sched.tripId)
+		}
+
+		if (tripId) {
+			const t = trips.find((x) => Number(x.tripId) === Number(tripId))
+			if (t) setSelectedTrip(t)
+		}
+
+		// if we have a scheduleId, set the selected schedule too
+		if (scheduleId) {
+			const s = tripSchedules.find((x) => Number(x.scheduleId) === Number(scheduleId))
+			if (s) setSelectedSchedule(s)
+		}
+	}, [location])
+
 		function downloadInvoice() {
 			const lines = []
 			lines.push('Invoice - Orivia')
-			lines.push(`Trip: Labuan Bajo`)
+			lines.push(`Trip: ${selectedTrip ? selectedTrip.name : 'Labuan Bajo'}`)
 			lines.push(`Passengers: ${passengers}`)
-			lines.push(`Total: Rp${((tripPrice * passengers) + extra).toLocaleString('id-ID')}`)
+			lines.push(`Schedule: ${selectedSchedule ? formatDateRange(selectedSchedule.start_date, selectedSchedule.end_date) : 'N/A'}`)
+			// include pickup total in invoice
+			const invoicePickupTotal = (data || []).reduce((s, p) => {
+				if (!p.pickup) return s
+				const pp = selectedTrip && selectedTrip.pickup_points ? selectedTrip.pickup_points.find((x) => x.location === p.pickup) : null
+				return s + (pp && pp.price ? Number(pp.price) : 0)
+			}, 0)
+			lines.push(`Total: Rp${((tripPrice * passengers) + extra + invoicePickupTotal).toLocaleString('id-ID')}`)
 			lines.push('\nPassenger details:')
 			data.forEach((p, i) => {
-				lines.push(`${i + 1}. ${(p.firstName || '') + (p.lastName ? ` ${p.lastName}` : '')} — ${p.phone || '-'} — ${p.nationality || '-'} `)
+				const pickupText = p.pickup || ''
+				const pp = selectedTrip && selectedTrip.pickup_points ? selectedTrip.pickup_points.find((x) => x.location === p.pickup) : null
+				const pickupPrice = pp && pp.price ? Number(pp.price) : 0
+				const pickupSuffix = pickupPrice ? ` (Rp${pickupPrice.toLocaleString('id-ID')})` : ''
+				lines.push(`${i + 1}. ${(p.firstName || '') + (p.lastName ? ` ${p.lastName}` : '')} — ${p.phone || ''} — ${p.nationality || ''} — Pickup: ${pickupText}${pickupSuffix}`)
 			})
 			const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
 			const url = URL.createObjectURL(blob)
@@ -152,27 +202,17 @@ const styles = {
 	const StepHeader = () => {
 		const circle = (n, label, isActive) => (
 			<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setActiveStep(n - 1)}>
-				<div style={{
-					width: 36,
-					height: 36,
-					borderRadius: 18,
-					display: 'flex',
-					alignItems: 'center',
-					justifyContent: 'center',
-					background: isActive ? colors.accent5 : 'transparent',
-					color: isActive ? colors.bg : colors.accent5,
-					border: `2px solid ${colors.accent5}`
-				}}>{n}</div>
-				<div style={{ fontSize: fontSize.sm, color: isActive ? colors.accent5 : colors.textLight }}>{label}</div>
+				<div style={{width: 36, height: 36, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isActive ? colors.accent1 : 'transparent', color: isActive ? colors.accent5 : colors.accent1, border: `2px solid ${colors.accent1}`}}>{n}</div>
+				<div style={{ fontWeight: 900, fontSize: fontSize.sm, color: isActive ? colors.bg : colors.accent1 }}>{label}</div>
 			</div>
 		)
 
 		return (
 			<div style={{ display: 'flex', alignItems: 'center', gap: spacing.md, marginBottom: spacing.md }}>
 				{circle(1, 'Trip Details', activeStep === 0)}
-				<div style={{ height: 2, flex: 1, background: '#E6E0D6' }} />
+				<div style={{ height: 2, flex: 1, background: colors.accent1 }} />
 				{circle(2, 'Payment', activeStep === 1)}
-				<div style={{ height: 2, flex: 1, background: '#E6E0D6' }} />
+				<div style={{ height: 2, flex: 1, background: colors.accent1 }} />
 				{circle(3, 'Confirmation', activeStep === 2)}
 			</div>
 		)
@@ -180,12 +220,13 @@ const styles = {
 
 
 	const TripDetailsStep = () => {
-		const defaults = { firstName: '', lastName: '', phone: '', nationality: '', dob: '', gender: '', pickup: 'gambir', notes: '' }
+		const defaults = { firstName: '', lastName: '', phone: '', nationality: '', dob: '', gender: '', pickup: '', notes: '' }
 		const [local, setLocal] = useState(defaults)
 
 		useEffect(() => {
 			const cur = data[current] || {}
-			setLocal({ ...defaults, ...cur })
+			const merged = { ...defaults, ...cur }
+			setLocal(merged)
 		}, [current, data])
 
 		// Debounced sync of local -> parent `data` to avoid frequent parent updates
@@ -202,6 +243,8 @@ const styles = {
 
 		function setField(field, value) {
 			setLocal((l) => ({ ...l, [field]: value }))
+			// persist pickup immediately so the aside summary updates without waiting for debounce
+			if (field === 'pickup') updateField(current, field, value)
 		}
 
 		function persistField(field) {
@@ -211,11 +254,11 @@ const styles = {
 		return (
 			<div style={{ ...styles.leftCard }}>
 			<TripCard style={{ width: '100%', padding: spacing.lg, display: 'flex', gap: 16, alignItems: 'center', marginBottom: spacing.md, border: '0px solid #00000043', borderRadius: radius.lg,boxShadow: shadows.sm}}>
-				<div style={{ ...styles.thumbnail, backgroundImage: `url(${tripexplore})` }} />
+				<div style={{ ...styles.thumbnail, backgroundImage: selectedTrip && selectedTrip.images && selectedTrip.images[1] ? `url(${selectedTrip.images[1]})` : `url(${tripexplore})` }} />
 				<div style={{ flex: 1 }}>
-					<h3 style={styles.h3}>Labuan Bajo</h3>
-					<div style={styles.meta}>2D1N • Island Exploration</div>
-					<div style={styles.meta}>1-2 February 2026 • East Nusa Tenggara, Indonesia</div>
+					<h3 style={styles.h3}>{selectedTrip ? selectedTrip.name : 'Trip'}</h3>
+					<div style={styles.meta}>{selectedTrip ? `${selectedTrip.duration?.days}D${selectedTrip.duration?.nights}N • ${selectedTrip.destinationType || selectedTrip.type}` : '2D8N • Island Exploration'}</div>
+					<div style={styles.meta}>{selectedSchedule ? formatDateRange(selectedSchedule.start_date, selectedSchedule.end_date) : (selectedTrip ? '' : '1-2 February 2026 • East Nusa Tenggara, Indonesia')}</div>
 				</div>
 				<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 					<button onClick={() => setPassengers((p) => Math.max(1, p - 1))} style={{ ...styles.arrowBtn }}>−</button>
@@ -265,15 +308,12 @@ const styles = {
 						<div style={{ marginTop: 12 }}>
 							<div>
 								<label style={{ display: 'block', marginBottom: 6 }}>Pick Up Point</label>
-								<select
-								                                    value={local.pickup}
-								                                    onChange={(e) => setField('pickup', e.target.value)}
-								                                    style={styles.input}
-								                                >
-									<option value="gambir">Pick Up: Orivia Agent Gambir, Jakarta (Rp 125.000)</option>
-									<option value="pasteur">Pick Up: Orivia Agent Pasteur, Bandung (Rp 150.000)</option>
-									<option value="airport">Pick Up: Komodo Airport, Labuan Bajo (Free)</option>
-								</select>
+									<select value={local.pickup} onChange={(e) => setField('pickup', e.target.value)} style={styles.input}>
+										<option value="" disabled hidden>Select pick up point</option>
+										{selectedTrip && selectedTrip.pickup_points && selectedTrip.pickup_points.map((pp, i) => (
+											<option key={i} value={pp.location}>{pp.location}{pp.price ? ` (Rp${pp.price.toLocaleString('id-ID')})` : ''}</option>
+										))}
+									</select>
 							</div>
 							<div style={{ marginTop: 10 }}>
 								<label style={{ display: 'block', marginBottom: 6 }}>Notes (Optional)</label>
@@ -322,9 +362,9 @@ const styles = {
 		return (
 			<div>
 				<div style={{ ...styles.leftCard }}>
-					<Card style={{ width: '100%', padding: spacing.md, marginBottom: spacing.md }}>
+					<Card style={{ width: '100%', padding: spacing.lg, marginBottom: spacing.md }}>
 						<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-							<div style={{ fontSize: fontSize.md, fontWeight: 700 }}>Payment Methods</div>
+							<div style={{ fontSize: fontSize.lg, fontWeight: 800, color: colors.accent5, marginBottom: spacing.md }}>Payment Methods</div>
 						</div>
 						<div style={{ marginTop: spacing.md, display: 'flex', gap: spacing.sm }}>
 							<LogoButton src={ovoLogo} label="OVO" value="ovo" />
@@ -364,7 +404,7 @@ const styles = {
 		<div>
 			<div style={{ ...styles.leftCard }}>
 				<Card style={{ width: '100%', padding: spacing.lg, borderRadius: radius.lg }}>
-						<div style={{ fontSize: fontSize.lg, fontWeight: 800, color: '#253129', marginBottom: spacing.md }}>Booking Details</div>
+						<div style={{ fontSize: fontSize.lg, fontWeight: 800, color: colors.accent5, marginBottom: spacing.md }}>Booking Details</div>
 						{(() => {
 							const p = data[current] || {}
 							return (
@@ -396,12 +436,7 @@ const styles = {
 										</div>
 										<div style={{ gridColumn: '2 / 5' }}>
 											<div style={{ fontWeight: 700 }}>Pick Up Point</div>
-											<div>{
-												p.pickup === 'gambir' ? 'Orivia Agent Gambir, Jakarta (Rp 125.000)'
-												: p.pickup === 'pasteur' ? 'Orivia Agent Pasteur, Bandung (Rp 150.000)'
-												: p.pickup === 'airport' ? 'Komodo Airport, Labuan Bajo (Free)'
-												: (p.pickup || '')
-											}</div>
+											<div>{p.pickup || ''}</div>
 										</div>
 									</div>
 
@@ -424,9 +459,24 @@ const styles = {
 		</div>
 	)
 
+	// derive pickup names array for the aside: show all selected pickup names, each on its own row
+	const pickupUnique = (() => {
+		try {
+			const picks = (data || []).map((p) => p.pickup).filter(Boolean)
+			if (picks.length === 0) return []
+			const unique = Array.from(new Set(picks))
+			return unique
+		} catch (e) {
+			return []
+		}
+	})()
+
+	// total pickup fees (sum over selected pickups)
+	const pickupTotal = (data || []).reduce((sum, p) => sum + getPickupPrice(p.pickup, selectedTrip), 0)
+
 	return (
 		<div style={styles.page}>
-			<Navbar style={{ position: 'sticky', top: 0, left: 0, right: 0, zIndex: 60, backgroundColor: `${colors.bg}33`, backdropFilter: 'saturate(120%) blur(6px)', borderBottom: `1px solid ${colors.bg}20` }} />
+			<Navbar/>
 			<div style={styles.container}>
 				<div style={{ gridColumn: '1 / -1' }}>
 					<StepHeader />
@@ -442,15 +492,26 @@ const styles = {
 					<div style={{ fontSize: fontSize.sm, color: colors.textLight, border: `1.5px solid ${colors.textLight}`, padding: spacing.sm, borderRadius: radius.sm }}>
 						<div style={{ marginBottom: spacing.sm }}>
 							<div style={{ fontWeight: 700 }}>Trip Name:</div>
-							<div>Labuan Bajo</div>
+							<div>{selectedTrip ? selectedTrip.name : 'Labuan Bajo boongan'}</div>
 						</div>
 						<div style={{ marginBottom: spacing.sm }}>
 							<div style={{ fontWeight: 700 }}>Trip Duration:</div>
-							<div>2 Day / 1 Night</div>
+							<div>{selectedTrip ? `${selectedTrip.duration?.days} Day / ${selectedTrip.duration?.nights} Night` : '8 Day / 1 Night'}</div>
 						</div>
 						<div>
 							<div style={{ fontWeight: 700 }}>Pick Up Point:</div>
-							<div>Orivia Agent Pasteur, Bandung</div>
+							<div>
+								{pickupUnique && pickupUnique.length ? (
+									<>
+										<div>{pickupUnique[0]}</div>
+										{pickupUnique.slice(1).map((p, i) => (
+											<div key={i} style={{ fontSize: fontSize.sm, color: colors.textLight }}>{p}</div>
+										))}
+									</>
+								) : (
+									<div>—</div>
+								)}
+							</div>
 						</div>
 					</div>
 
@@ -465,26 +526,22 @@ const styles = {
 							<div style={{ color: colors.accent5, fontSize: fontSize.sm }}>{passengers}</div>
 						</div>
 						<div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-							<div style={{ color: colors.accent5, fontSize: fontSize.sm }}>Free Transport</div>
-							<div style={{ color: colors.accent5, fontSize: fontSize.sm }}>Rp{extra.toLocaleString('id-ID')}</div>
+							<div style={{ color: colors.accent5, fontSize: fontSize.sm }}>Pick Up Fee</div>
+							<div style={{ color: colors.accent5, fontSize: fontSize.sm }}>Rp{pickupTotal.toLocaleString('id-ID')}</div>
 						</div>
 					</div>
 
 					<div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 						<div style={{ fontSize: fontSize.md, color: colors.accent5,fontWeight: 700 }}><stong>Total Price</stong></div>
-						<div style={styles.priceTotal}>Rp{((tripPrice * passengers) + extra).toLocaleString('id-ID')}</div>
+						<div style={styles.priceTotal}>Rp{((tripPrice * passengers) + extra + pickupTotal).toLocaleString('id-ID')}</div>
 					</div>
-
-					<Button
-						variant="primary"
-						style={{ marginTop: spacing.md, width: '100%', padding: '10px 12px', fontWeight: 700 }}
-						onClick={() => {
+                                
+					<Button variant="primary" style={{ marginTop: spacing.md, width: '100%', padding: '10px 12px', fontWeight: 700 }} onClick={() => {
 							if (activeStep === 0) setActiveStep(1)
 							else if (activeStep === 1) setActiveStep(2)
 							else downloadInvoice()
-						}}
-					>
-						{activeStep === 0 ? 'Request to Book' : activeStep === 1 ? 'Pay Now' : 'Download Invoice'}
+						}}>
+						{activeStep === 0 ? <><IconButton icon={<FontAwesomeIcon icon={faShoppingCart} style={{ color: colors.bg }} />} /> Request to Book</> : activeStep === 1 ? <><IconButton icon={<FontAwesomeIcon icon={faCreditCard} style={{ color: colors.bg }} />} /> Pay Now</> : <><IconButton icon={<FontAwesomeIcon icon={faDownload} style={{ color: colors.bg }} />} /> Download Invoice</>}
 					</Button>
 					{activeStep === 2 && (
 						<div style={{ marginTop: spacing.sm, fontSize: fontSize.sm, textAlign: 'center' }}>
@@ -496,6 +553,44 @@ const styles = {
 			</div>
 		</div>
 	)
+}
+
+// helper: get pickup price (0 when not found or not selected)
+function getPickupPrice(location, trip) {
+	if (!location || !trip || !trip.pickup_points) return 0
+	const pp = trip.pickup_points.find((x) => x.location === location)
+	return pp && pp.price ? Number(pp.price) : 0
+}
+
+// Format tanggal agar mudah dibaca (Bahasa Indonesia)
+function formatDate(dateStr) {
+	try {
+		const d = new Date(dateStr)
+		return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(d)
+	} catch (e) {
+		return dateStr || ''
+	}
+}
+
+function formatDateRange(start, end) {
+	if (!start) return 'N/A'
+	if (!end || start === end) return formatDate(start)
+	try {
+		const s = new Date(start)
+		const e = new Date(end)
+		const sameMonth = s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth()
+		if (sameMonth) {
+			// tampilkan: 1–3 Februari 2026
+			const dayStart = s.getDate()
+			const dayEnd = e.getDate()
+			const monthYear = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(s)
+			return `${dayStart}–${dayEnd} ${monthYear}`
+		}
+		// beda bulan/tahun: tampilkan dua tanggal lengkap
+		return `${formatDate(start)} – ${formatDate(end)}`
+	} catch (e) {
+		return `${start} – ${end}`
+	}
 }
 
 export default CheckoutPage
