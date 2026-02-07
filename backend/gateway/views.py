@@ -14,22 +14,28 @@ class GatewayProxyView(APIView):
     def dispatch(self, request, *args, **kwargs):
         # Determine target service
         service_name = kwargs.get('service')
-        path = kwargs.get('path')
+        path = kwargs.get('path', '')
         
         if service_name == 'planner':
             base_url = settings.TRAVEL_PLANNER_URL
+            # Map external 'planner' to internal 'perencanaan'
+            internal_path = f"perencanaan/{path.lstrip('/')}"
         else:
             return HttpResponse("Service not found", status=404)
 
         # Construct target URL
-        # Strip the leading slash from path to avoid double slashes
-        url = f"{base_url}/{path.lstrip('/')}"
+        url = f"{base_url}/api/{internal_path}"
         
         # Forward the request
         try:
-            # Forward JWT Authorization header
+            # Forward JWT Authorization header and user info
             headers = {key: value for key, value in request.headers.items() 
                       if key.lower() not in ['host', 'content-length']}
+            
+            # Add user ID to headers for microservice to identify user
+            if request.user.is_authenticated:
+                headers['X-User-ID'] = str(request.user.id)
+                headers['X-User-Role'] = request.user.role
             
             # Explicitly set Content-Type if provided
             if request.content_type:
