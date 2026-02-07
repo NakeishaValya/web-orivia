@@ -198,14 +198,24 @@ REST_AUTH = {
     'JWT_AUTH_SAMESITE': 'Lax',
 }
 
-# AllAuth Configuration
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+# Django Allauth Configuration
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 
-# New django-allauth configuration
-ACCOUNT_LOGIN_METHODS = {'email'}
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+# Authentication Backends
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# Rest Auth Configuration
+REST_AUTH = {
+    'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
+    'USER_DETAILS_SERIALIZER': 'users.serializers.CustomUserSerializer',
+    'REGISTER_SERIALIZER': 'users.serializers.CustomRegisterSerializer',
+}
 
 # JWT Settings (SimpleJWT)
 SIMPLE_JWT = {
