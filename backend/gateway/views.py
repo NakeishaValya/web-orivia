@@ -1,9 +1,12 @@
 import requests
+import logging
 from django.conf import settings
 from django.http import HttpResponse
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
+logger = logging.getLogger(__name__)
 
 class GatewayProxyView(APIView):
     """
@@ -27,10 +30,13 @@ class GatewayProxyView(APIView):
         # Construct target URL
         url = f"{base_url}/api/{internal_path}"
         
+        # Log request details
+        logger.info(f"Gateway proxying {request.method} to: {url}")
+        logger.info(f"User ID: {request.user.id}, Role: {request.user.role}")
+        
         # Forward the request
         try:
             # Forward headers, but strip security-sensitive ones
-            # Exclude host, content-length, and any user identity headers
             excluded_headers = ['host', 'content-length', 'x-user-id', 'x-user-role']
             headers = {
                 key: value for key, value in request.headers.items() 
@@ -38,9 +44,11 @@ class GatewayProxyView(APIView):
             }
             
             # Always set user identity from authenticated server-side context
-            # This prevents header spoofing attacks
             headers['X-User-ID'] = str(request.user.id)
             headers['X-User-Role'] = request.user.role
+            
+            # Log headers being sent
+            logger.info(f"Headers sent to microservice: X-User-ID={headers['X-User-ID']}, X-User-Role={headers['X-User-Role']}")
             
             # Explicitly set Content-Type if provided
             if request.content_type:
@@ -55,6 +63,10 @@ class GatewayProxyView(APIView):
                 timeout=10
             )
 
+            # Log response
+            logger.info(f"Microservice response status: {response.status_code}")
+            logger.info(f"Response content: {response.text[:200]}...")  # First 200 chars
+
             # Return microservice response to frontend
             return HttpResponse(
                 response.content,
@@ -63,7 +75,7 @@ class GatewayProxyView(APIView):
             )
 
         except requests.exceptions.RequestException as e:
-            # Handle connection errors (Service Down)
+            logger.error(f"Gateway Error: {str(e)}")
             return HttpResponse(f"Gateway Error: {str(e)}", status=503)
 
     def get(self, request, service, path='', *args, **kwargs):
