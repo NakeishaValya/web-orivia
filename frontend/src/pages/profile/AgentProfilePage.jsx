@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import axios from 'axios';
 import Navbar from '../../components/ui/Navbar.jsx';
 import Button from '../../components/ui/Button.jsx';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPen } from '@fortawesome/free-solid-svg-icons';
 import profileImage from '../../assets/images/jeki.jpg';
 import bottomImage from '../../assets/images/landingpage2.png';
+import { colors, spacing, radius, fontSize, lineHeight, fontFamily, shadows, transitions } from '../../styles/variables.jsx';
+
 
 export default function AgentProfilePage() {
   const accent = '#BF4A24';
@@ -24,27 +27,132 @@ export default function AgentProfilePage() {
     }
   })();
 
-  const localUser = (() => {
-    try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch (e) { return null; }
-  })();
+  const [localUser, setLocalUser] = useState(() => {
+    try { 
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      return user;
+    } catch (e) { return null; }
+  });
+  const [loading, setLoading] = useState(false);
+  const [profileDetail, setProfileDetail] = useState(null);
 
-  const displayName = googleData?.name || localUser?.first_name || 'Dzaky Atha';
+  // Fetch user data from API if not in localStorage
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (localUser) return;
+    if (!token) return;
+
+    setLoading(true);
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+    async function fetchUser() {
+      try {
+        const response = await axios.get(`${apiUrl}/auth/user/`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const userData = response.data.user || response.data;
+        if (userData) {
+          localStorage.setItem('user', JSON.stringify(userData));
+          setLocalUser(userData);
+        }
+      } catch (error) {
+        // ignore fetch errors silently; UI will show defaults
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchUser();
+  }, [localUser]);
+
+  // If localUser exists but no obvious date fields, try fetching detailed profile by id
+  useEffect(() => {
+    if (!localUser) return;
+    const hasDate = Object.keys(localUser).some(k => /date|joined|created/i.test(k)) || !!localUser.profile;
+    if (hasDate) return;
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+    const id = localUser.id || localUser.user_id || localUser.pk;
+    if (!id) return;
+
+    async function fetchProfileDetail() {
+      const endpoints = [`/users/${id}/`, `/profiles/${id}/`, `/users/profile/${id}/`];
+      for (const ep of endpoints) {
+        try {
+          const res = await axios.get(`${apiUrl}${ep}`, { headers: { Authorization: `Bearer ${token}` } });
+          const detail = res.data.user || res.data.profile || res.data || null;
+          if (detail) {
+            setProfileDetail(detail);
+            const merged = { ...localUser, ...detail };
+            localStorage.setItem('user', JSON.stringify(merged));
+            setLocalUser(merged);
+            return;
+          }
+        } catch (e) {
+          // try next
+        }
+      }
+    }
+
+    fetchProfileDetail();
+  }, [localUser]);
+
+  function extractUsernameFromEmail(email) {
+    if (!email) return null;
+    try {
+      return email.split('@')[0];
+    } catch (e) {
+      return null;
+    }
+  }
+
+  const userEmail = localUser?.email || googleData?.email;
+  const displayName = googleData?.name || 
+                     localUser?.first_name || 
+                     localUser?.name || 
+                     extractUsernameFromEmail(userEmail) || 
+                     'Dzaky Atha';
+
+  function formatDateIndo(dateStr) {
+    if (!dateStr) return '—';
+    try {
+      const date = new Date(dateStr);
+      return new Intl.DateTimeFormat('id-ID', { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      }).format(date);
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  const joinedDate = localUser?.date_joined ||
+                    localUser?.dateJoined ||
+                    localUser?.created_at ||
+                    localUser?.createdAt ||
+                    localUser?.profile?.created_at ||
+                    profileDetail?.created_at ||
+                    localUser?.profile?.createdAt ||
+                    localUser?.DATE_JOINED;
 
   const infoRows = [
-    ['Joined Since', '18 January 2026'],
-    ['Email', 'dzakyatha8@gmail.com'],
-    ['Phone Number', '0812345678910'],
-    ['Date of Birthday', '07 Maret 2005'],
-    ['Gender', 'Male'],
-    ['District / Area', 'Jatinangor'],
-    ['City / Regency', 'Sumedang'],
-    ['Province / State', 'West Java'],
-    ['Nationality', 'Indonesia'],
-    ['Language preference', 'Bahasa Indonesia'],
+    ['Joined Since', joinedDate ? formatDateIndo(joinedDate) : '—'],
+    ['Email', localUser?.email || 'dzakyatha8@gmail.com'],
+    ['Phone Number', localUser?.phone_number || localUser?.phone || '0812345678910'],
+    ['Date of Birthday', formatDateIndo(localUser?.date_of_birth || localUser?.birth_date) || '07 Maret 2005'],
+    ['Gender', localUser?.gender || 'Male'],
+    ['District / Area', localUser?.district || localUser?.area || 'Jatinangor'],
+    ['City / Regency', localUser?.city || localUser?.regency || 'Sumedang'],
+    ['Province / State', localUser?.province || localUser?.state || 'West Java'],
+    ['Nationality', localUser?.nationality || 'Indonesia'],
+    ['Language preference', localUser?.language_preference || 'Bahasa Indonesia'],
   ];
 
   return (
-    <div style={{ position: 'relative', height: '100vh', overflow: 'hidden', backgroundImage: `url(${bottomImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div style={{ backgroundImage: "url('https://images.unsplash.com/photo-1517079810336-d39e72287591?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')", height: '100vh', backgroundSize: '100% auto', backgroundPosition: 'top center', backgroundRepeat: 'no-repeat' }}>
       <Navbar style={{ position: 'relative', zIndex: 30 }} />
 
       <main style={{ position: 'relative', zIndex: 20, display: 'flex', justifyContent: 'center', padding: '100px 24px' }}>
