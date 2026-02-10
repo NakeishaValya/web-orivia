@@ -671,6 +671,24 @@ export const TextLink = ({ children, onClick, style = {} }) => {
 
 export default Card;
 
+// ProfileCard: used for profile pages (summary / detail cards)
+export const ProfileCard = ({ children, style = {}, cardBg, borderColor, alignCenter = false, ...props }) => {
+  const profileStyle = {
+    background: cardBg || colors.bg,
+    borderRadius: radius.lg,
+    boxShadow: '0 14px 40px rgba(2,12,20,0.38)',
+    border: borderColor ? `2px solid ${borderColor}` : `2px solid ${colors.text}11`,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: alignCenter ? 'center' : 'stretch',
+    ...style,
+  };
+
+  return (
+    <div style={profileStyle} {...props}>
+      {children}
+    </div>
+  );
 // Search Filters Card: Start Date / End Date / Location / Pax + Search/Clear
 export const SearchFiltersCard = ({
 	startDate,
