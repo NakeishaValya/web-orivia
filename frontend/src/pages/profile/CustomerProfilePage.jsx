@@ -4,9 +4,11 @@ import axios from 'axios';
 import Navbar from '../../components/ui/Navbar.jsx';
 import Button from '../../components/ui/Button.jsx';
 import { ProfileCard } from '../../components/ui/Card.jsx';
+import Modal, { modalStyles } from '../../components/ui/Modal.jsx';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPen, faEye, faClock, faCheck, faCalendarDays, faTag, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
-import { dummyCustomerProfile, customerLatestTrips } from '../../mocks/mockData.js';
+import { faPen, faEye, faClock, faCheck, faCalendarDays, faTag, faMapMarkerAlt, faXmark, faDownload } from '@fortawesome/free-solid-svg-icons';
+import { dummyCustomerProfile, customerLatestTrips, tripBookingDetails } from '../../mocks/mockData.js';
+import countryList from 'react-select-country-list';
 import profileImage from '../../assets/images/jeki.jpg';
 import tripThumb1 from '../../assets/images/landingpage2.png';
 import tripThumb2 from '../../assets/images/landingpage2.png';
@@ -38,6 +40,25 @@ export default function CustomerProfilePage() {
   });
   const [loading, setLoading] = useState(false);
   const [profileDetail, setProfileDetail] = useState(null);
+
+  // Edit Profile Modal States
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editableProfile, setEditableProfile] = useState({
+    name: '',
+    phone: '',
+    dateOfBirth: '',
+    gender: '',
+    district: '',
+    city: '',
+    province: '',
+    nationality: '',
+    language: ''
+  });
+
+  // Trip Detail Modal States
+  const [showTripDetail, setShowTripDetail] = useState(false);
+  const [selectedTrip, setSelectedTrip] = useState(null);
+  const [passengerIndex, setPassengerIndex] = useState(0);
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
@@ -109,6 +130,76 @@ export default function CustomerProfilePage() {
   const displayName = googleData?.name || localUser?.first_name || localUser?.name || extractUsernameFromEmail(userEmail) || dummyCustomerProfile.name;
   const username = localUser?.username || extractUsernameFromEmail(userEmail) || dummyCustomerProfile.username;
 
+  // Country list for nationality dropdown
+  const countryOptions = (typeof countryList === 'function') ? (countryList().getData ? countryList().getData() : []) : [];
+  const countryNames = countryOptions.map((c) => c.label || c.value || '');
+
+  // Open Edit Profile Modal
+  const openEditModal = () => {
+    setEditableProfile({
+      name: displayName,
+      phone: localUser?.phone_number || localUser?.phone || dummyCustomerProfile.phone,
+      dateOfBirth: localUser?.date_of_birth || localUser?.birth_date || dummyCustomerProfile.dateOfBirth,
+      gender: localUser?.gender || dummyCustomerProfile.gender,
+      district: localUser?.district || localUser?.area || dummyCustomerProfile.district,
+      city: localUser?.city || localUser?.regency || dummyCustomerProfile.city,
+      province: localUser?.province || localUser?.state || dummyCustomerProfile.province,
+      nationality: localUser?.nationality || dummyCustomerProfile.nationality,
+      language: localUser?.language_preference || dummyCustomerProfile.language
+    });
+    setShowEditModal(true);
+  };
+
+  // Save Profile Changes
+  const saveProfile = () => {
+    // Here you can add API call to save the profile
+    // For now, we'll just update localStorage
+    const updatedUser = {
+      ...localUser,
+      first_name: editableProfile.name,
+      phone_number: editableProfile.phone,
+      date_of_birth: editableProfile.dateOfBirth,
+      gender: editableProfile.gender,
+      district: editableProfile.district,
+      city: editableProfile.city,
+      province: editableProfile.province,
+      nationality: editableProfile.nationality,
+      language_preference: editableProfile.language
+    };
+    
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setLocalUser(updatedUser);
+    setShowEditModal(false);
+  };
+
+  // Open Trip Detail Modal
+  const openTripDetail = (trip) => {
+    setSelectedTrip(trip);
+    setShowTripDetail(true);
+  };
+
+  useEffect(() => {
+    setPassengerIndex(0);
+  }, [selectedTrip]);
+
+  // Download Invoice Handler
+  const downloadInvoice = (trip) => {
+    // Create a simple text content for the invoice
+    const invoiceContent = `
+ORIVIA TRAVEL INVOICE\n========================\n\nBooking ID: ${tripBookingDetails[trip.id]?.bookingId}\nTrip: ${trip.title}\nLocation: ${trip.location}\nDate: ${trip.date}\nPrice: ${trip.price}\nStatus: ${trip.status}\n\nCustomer Details:\nName: ${tripBookingDetails[trip.id]?.customerName}\nPhone: ${tripBookingDetails[trip.id]?.phoneNumber}\nGender: ${tripBookingDetails[trip.id]?.gender}\nNationality: ${tripBookingDetails[trip.id]?.nationality}\nDate of Birth: ${tripBookingDetails[trip.id]?.dateOfBirth}\n\nPickup Point: ${tripBookingDetails[trip.id]?.pickupPoint}\n\nNotes: ${tripBookingDetails[trip.id]?.notes}\n\nThank you for traveling with Orivia!\n    `;
+
+    // Create and download the file
+    const blob = new Blob([invoiceContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Orivia-Invoice-${trip.title.replace(/\s+/g, '-')}-${trip.id}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
   function formatDateIndo(dateStr) {
     if (!dateStr) return '—';
     try {
@@ -160,7 +251,7 @@ export default function CustomerProfilePage() {
           <ProfileCard cardBg={cardBg} borderColor={borderColor} style={{ flex: '1 1 56%', padding: spacing['2xl'] }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
               <h3 style={{ margin: 0, color: accent, fontFamily: fontFamily.base, fontSize: fontSize['3xl'], fontWeight: 800 }}>Bio & Others Detail</h3>
-              <Button variant="btn2" style={{ background: accent, color: '#fff', borderRadius: 999, padding: '10px 16px', fontWeight: 800 }}>
+              <Button variant="btn2" onClick={openEditModal} style={{ background: accent, color: '#fff', borderRadius: 999, padding: '10px 16px', fontWeight: 800 }}>
                 <FontAwesomeIcon icon={faPen} style={{ marginRight: 10 }} /> Edit
               </Button>
             </div>
@@ -216,7 +307,7 @@ export default function CustomerProfilePage() {
                       <div style={{ color: colors.accent5, marginTop: 6 }}>{trip.location}</div>
                     </div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <Button variant="btn1" style={{ fontWeight: 500 }}>
+                      <Button variant="btn1" onClick={() => openTripDetail(trip)} style={{ fontWeight: 500 }}>
                         <FontAwesomeIcon icon={faEye} style={{ marginRight: 5 }} />
                         See Details
                       </Button>
@@ -255,6 +346,282 @@ export default function CustomerProfilePage() {
             ))}
           </div>
         </div>
+
+        {/* Edit Profile Modal */}
+        {showEditModal && (
+          <Modal open={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Profile">
+            <div style={{...modalStyles.gridTwoColumns, marginBottom: spacing.lg}}>
+              <div>
+                <label style={modalStyles.label}>Full Name</label>
+                <input 
+                  type="text" 
+                  value={editableProfile.name} 
+                  onChange={(e) => setEditableProfile({...editableProfile, name: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+              </div>
+              <div>
+                <label style={modalStyles.label}>Phone Number</label>
+                <input 
+                  type="text" 
+                  value={editableProfile.phone} 
+                  onChange={(e) => setEditableProfile({...editableProfile, phone: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+              </div>
+            </div>
+
+            <div style={{...modalStyles.gridTwoColumns, marginBottom: spacing.lg}}>
+              <div>
+                <label style={modalStyles.label}>Date of Birth</label>
+                <input 
+                  type="date" 
+                  value={editableProfile.dateOfBirth} 
+                  onChange={(e) => setEditableProfile({...editableProfile, dateOfBirth: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+              </div>
+              <div>
+                <label style={modalStyles.label}>Gender</label>
+                <select 
+                  value={editableProfile.gender} 
+                  onChange={(e) => setEditableProfile({...editableProfile, gender: e.target.value})} 
+                  style={modalStyles.input}
+                >
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{...modalStyles.gridTwoColumns, marginBottom: spacing.lg}}>
+              <div>
+                <label style={modalStyles.label}>District / Area</label>
+                <input 
+                  type="text" 
+                  value={editableProfile.district} 
+                  onChange={(e) => setEditableProfile({...editableProfile, district: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+              </div>
+              <div>
+                <label style={modalStyles.label}>City / Regency</label>
+                <input 
+                  type="text" 
+                  value={editableProfile.city} 
+                  onChange={(e) => setEditableProfile({...editableProfile, city: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+              </div>
+            </div>
+
+            <div style={{...modalStyles.gridTwoColumns, marginBottom: spacing.lg}}>
+              <div>
+                <label style={modalStyles.label}>Province / State</label>
+                <input 
+                  type="text" 
+                  value={editableProfile.province} 
+                  onChange={(e) => setEditableProfile({...editableProfile, province: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+              </div>
+              <div>
+                <label style={modalStyles.label}>Nationality</label>
+                <select 
+                  value={editableProfile.nationality} 
+                  onChange={(e) => setEditableProfile({...editableProfile, nationality: e.target.value})} 
+                  style={modalStyles.input}
+                >
+                  <option value="">Select nationality</option>
+                  {countryNames.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div style={{marginBottom: spacing.lg}}>
+              <label style={modalStyles.label}>Language Preference</label>
+              <input 
+                type="text" 
+                value={editableProfile.language} 
+                onChange={(e) => setEditableProfile({...editableProfile, language: e.target.value})} 
+                style={modalStyles.input} 
+                placeholder="e.g., Bahasa Indonesia, English"
+              />
+            </div>
+
+            <div style={modalStyles.buttonContainer}>
+              <Button variant="btn2" onClick={saveProfile} style={{ display: 'inline-flex', gap: spacing.xs, width: '155px' }}>
+                <FontAwesomeIcon icon={faCheck} /> Save Changes
+              </Button>
+              <Button variant="btn3" onClick={() => setShowEditModal(false)} style={{ display: 'inline-flex', gap: spacing.xs }}>
+                <FontAwesomeIcon icon={faXmark} /> Cancel
+              </Button>
+            </div>
+          </Modal>
+        )}
+
+        {/* Trip Detail Modal */}
+        {showTripDetail && selectedTrip && (
+          <Modal open={showTripDetail} onClose={() => setShowTripDetail(false)} title={`Booking Details (${selectedTrip.title})`}>
+
+            <div style={{ position: 'relative' }}>
+              {/* top-left close button removed per request */}
+
+              {/* Passenger Information Grid - support multiple passengers with navigation */}
+              <div style={{ marginBottom: spacing.xl }}>
+              {
+                (() => {
+                  const booking = tripBookingDetails[selectedTrip.id] || {};
+                  const passengers = (booking.passengers && booking.passengers.length)
+                    ? booking.passengers
+                    : [{
+                        customerName: booking.customerName || booking.customer || booking.customer_name || dummyCustomerProfile.name,
+                        phoneNumber: booking.phoneNumber || booking.phone || dummyCustomerProfile.phone,
+                        gender: booking.gender || dummyCustomerProfile.gender,
+                        nationality: booking.nationality || dummyCustomerProfile.nationality,
+                        dateOfBirth: booking.dateOfBirth || booking.dob || dummyCustomerProfile.dateOfBirth,
+                        pickupPoint: booking.pickupPoint || booking.pickup || '—',
+                        notes: booking.notes || ''
+                      }];
+
+                  const p = passengers[passengerIndex] || passengers[0];
+
+                  return (
+                    <>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: spacing.lg, marginBottom: spacing.lg }}>
+                        <div>
+                          <div style={{ fontWeight: 700, color: colors.accent5, marginBottom: spacing.sm }}>Name</div>
+                          <div style={{ fontWeight: 600, color: colors.accent5, fontSize: fontSize.base }}>{p.customerName}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, color: colors.accent5, marginBottom: spacing.sm }}>Phone Number</div>
+                          <div style={{ fontWeight: 600, color: colors.accent5, fontSize: fontSize.base }}>{p.phoneNumber}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, color: colors.accent5, marginBottom: spacing.sm }}>Gender</div>
+                          <div style={{ fontWeight: 600, color: colors.accent5, fontSize: fontSize.base }}>{p.gender}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, color: colors.accent5, marginBottom: spacing.sm }}>Nationality</div>
+                          <div style={{ fontWeight: 600, color: colors.accent5, fontSize: fontSize.base }}>{p.nationality}</div>
+                        </div>
+                      </div>
+                  
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: spacing.lg, marginBottom: spacing.lg }}>
+                        <div>
+                          <div style={{ fontWeight: 700, color: colors.accent5, marginBottom: spacing.sm }}>Date of Birth</div>
+                          <div style={{ fontWeight: 600, color: colors.accent5, fontSize: fontSize.base }}>{p.dateOfBirth}</div>
+                        </div>
+                        <div style={{ gridColumn: '2 / 5' }}>
+                          <div style={{ fontWeight: 700, color: colors.accent5, marginBottom: spacing.sm }}>Pick Up Point</div>
+                          <div style={{ fontWeight: 600, color: colors.accent5, fontSize: fontSize.base }}>{p.pickupPoint}</div>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()
+              }
+            </div>
+
+            {/* Notes Section (per passenger) */}
+            <div style={{ marginBottom: 0 }}>
+              <div style={{ fontWeight: 700, color: colors.accent5, marginBottom: spacing.sm, fontSize: fontSize.base }}>Notes</div>
+              <div style={{ 
+                color: colors.accent5,
+                lineHeight: lineHeight.relaxed,
+                fontSize: fontSize.base,
+                minHeight: '70px'
+              }}>
+                {
+                  (() => {
+                    const booking = tripBookingDetails[selectedTrip.id] || {};
+                    const passengers = (booking.passengers && booking.passengers.length) ? booking.passengers : [{ notes: booking.notes || '' }];
+                    return passengers[passengerIndex]?.notes || passengers[0]?.notes || '';
+                  })()
+                }
+              </div>
+            </div>
+
+            {/* Passenger navigation (after notes) */}
+            {
+              (() => {
+                const booking = tripBookingDetails[selectedTrip.id] || {};
+                const passengers = (booking.passengers && booking.passengers.length)
+                  ? booking.passengers
+                  : [{ notes: booking.notes || '' }];
+                if (!passengers || passengers.length <= 1) return null;
+
+                const atStart = passengerIndex <= 0;
+                const atEnd = passengerIndex >= passengers.length - 1;
+
+                return (
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: spacing.sm}}>
+                    <button
+                      onClick={() => setPassengerIndex((i) => Math.max(0, i - 1))}
+                      disabled={atStart}
+                      style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${colors.accent3}`, background: 'transparent', cursor: atStart ? 'not-allowed' : 'pointer' }}
+                    >◀</button>
+
+                    <div style={{ padding: '6px 10px', borderRadius: 8, border: `1px solid ${colors.accent3}`, display: 'flex', alignItems: 'center' }}>{passengerIndex + 1} / {passengers.length}</div>
+
+                    <button
+                      onClick={() => setPassengerIndex((i) => Math.min(passengers.length - 1, i + 1))}
+                      disabled={atEnd}
+                      style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${colors.accent3}`, background: 'transparent', cursor: atEnd ? 'not-allowed' : 'pointer' }}
+                    >▶</button>
+                  </div>
+                );
+              })()
+            }
+
+            <div style={{ 
+              display: 'flex', 
+              gap: spacing.sm, 
+              justifyContent: 'space-between',
+              paddingTop: spacing.xl,
+              width: '100%'
+            }}>
+              <Button 
+                variant="primary" 
+                onClick={() => downloadInvoice(selectedTrip)} 
+                style={{ 
+                  flex: 4,
+                  display: 'inline-flex', 
+                  alignItems: 'center',
+                  gap: spacing.xs, 
+                  justifyContent: 'center',
+                  padding: `${spacing.md} ${spacing.lg}`,
+                  fontSize: fontSize.base,
+                  fontWeight: 700,
+                  minWidth: 0
+                }}
+              >
+                <FontAwesomeIcon icon={faDownload} /> Download Invoice
+              </Button>
+              <Button 
+                variant="primary" 
+                onClick={() => setShowTripDetail(false)} 
+                style={{ 
+                  flex: 1,
+                  display: 'inline-flex', 
+                  alignItems: 'center',
+                  gap: spacing.xs,
+                  justifyContent: 'center',
+                  padding: `${spacing.sm} ${spacing.md}`,
+                  fontSize: fontSize.base,
+                  fontWeight: 700,
+                  minWidth: 0
+                }}
+              >
+                <FontAwesomeIcon icon={faXmark} /> Back
+              </Button>
+            </div>
+            </div>
+          </Modal>
+        )}
       </main>
     </div>
   );

@@ -69,6 +69,69 @@ export const customerLatestTrips = [
   },
 ];
 
+// Detailed booking information for each trip
+export const tripBookingDetails = {
+  1: {
+    bookingId: '@nakeiiii123',
+    customerName: 'Nakeisha Valya',
+    phoneNumber: '081234568910',
+    gender: 'Female',
+    nationality: 'Indonesia',
+    dateOfBirth: '29 June 2006',
+    notes: 'I prefer a window seat during transportation if available, prefer a lower bunk for sleeping arrangements, and have food allergies to peanuts and shrimp.',
+    pickupPoint: 'Orivia Agent Pasteur, Bandung',
+    passengers: [
+      {
+        customerName: 'Nakeisha Valya',
+        phoneNumber: '081234568910',
+        gender: 'Female',
+        nationality: 'Indonesia',
+        dateOfBirth: '29 June 2006',
+        pickupPoint: 'Orivia Agent Pasteur, Bandung',
+        notes: 'I prefer a window seat during transportation if available. Allergic to peanuts and shrimp.'
+      },
+      {
+        customerName: 'Ardi Prasetyo',
+        phoneNumber: '081298765432',
+        gender: 'Male',
+        nationality: 'Indonesia',
+        dateOfBirth: '1995-11-21',
+        pickupPoint: 'Orivia Agent Pasteur, Bandung',
+        notes: 'Needs vegetarian meal option.'
+      },
+      {
+        customerName: 'Siti Rahma',
+        phoneNumber: '081377788899',
+        gender: 'Female',
+        nationality: 'Indonesia',
+        dateOfBirth: '1998-04-03',
+        pickupPoint: 'Orivia Agent Pasteur, Bandung',
+        notes: 'Prefer lower bunk and morning departure.'
+      }
+    ]
+  },
+  2: {
+    bookingId: '@nakeiiii124',
+    customerName: 'Nakeisha Valya',
+    phoneNumber: '081234568910',
+    gender: 'Female',
+    nationality: 'Indonesia',
+    dateOfBirth: '29 June 2006',
+    notes: 'Experienced diver with PADI Open Water certification. Prefer early morning dive sessions and vegetarian meal options.',
+    pickupPoint: 'Sorong Harbor'
+  },
+  3: {
+    bookingId: '@nakeiiii125',
+    customerName: 'Nakeisha Valya',
+    phoneNumber: '081234568910',
+    gender: 'Female',
+    nationality: 'Indonesia',
+    dateOfBirth: '29 June 2006',
+    notes: 'First time mountain hiking. Please provide extra guidance and safety equipment. Prefer moderate hiking pace.',
+    pickupPoint: 'Orivia Agent Malang, East Java'
+  }
+};
+
 // Trip Master Data (static information shared across all schedules)
 export const trips = [
   {

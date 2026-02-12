@@ -4,9 +4,11 @@ import axios from 'axios';
 import Navbar from '../../components/ui/Navbar.jsx';
 import Button from '../../components/ui/Button.jsx';
 import { ProfileCard } from '../../components/ui/Card.jsx';
+import Modal, { modalStyles } from '../../components/ui/Modal.jsx';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPen } from '@fortawesome/free-solid-svg-icons';
+import { faPen, faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { dummyAgentProfile } from '../../mocks/mockData.js';
+import countryList from 'react-select-country-list';
 import profileImage from '../../assets/images/jeki.jpg';
 import bottomImage from '../../assets/images/landingpage2.png';
 import { colors, spacing, radius, fontSize, lineHeight, fontFamily, shadows, transitions } from '../../styles/variables.jsx';
@@ -37,6 +39,20 @@ export default function AgentProfilePage() {
   });
   const [loading, setLoading] = useState(false);
   const [profileDetail, setProfileDetail] = useState(null);
+
+  // Edit Profile Modal States
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editableProfile, setEditableProfile] = useState({
+    name: '',
+    phone: '',
+    dateOfBirth: '',
+    gender: '',
+    district: '',
+    city: '',
+    province: '',
+    nationality: '',
+    language: ''
+  });
 
   // Fetch user data from API if not in localStorage
   useEffect(() => {
@@ -118,6 +134,48 @@ export default function AgentProfilePage() {
                      dummyAgentProfile.name;
   const username = localUser?.username || extractUsernameFromEmail(userEmail) || dummyAgentProfile.username;
 
+  // Country list for nationality dropdown
+  const countryOptions = (typeof countryList === 'function') ? (countryList().getData ? countryList().getData() : []) : [];
+  const countryNames = countryOptions.map((c) => c.label || c.value || '');
+
+  // Open Edit Profile Modal
+  const openEditModal = () => {
+    setEditableProfile({
+      name: displayName,
+      phone: localUser?.phone_number || localUser?.phone || dummyAgentProfile.phone,
+      dateOfBirth: localUser?.date_of_birth || localUser?.birth_date || dummyAgentProfile.dateOfBirth,
+      gender: localUser?.gender || dummyAgentProfile.gender,
+      district: localUser?.district || localUser?.area || dummyAgentProfile.district,
+      city: localUser?.city || localUser?.regency || dummyAgentProfile.city,
+      province: localUser?.province || localUser?.state || dummyAgentProfile.province,
+      nationality: localUser?.nationality || dummyAgentProfile.nationality,
+      language: localUser?.language_preference || dummyAgentProfile.language
+    });
+    setShowEditModal(true);
+  };
+
+  // Save Profile Changes
+  const saveProfile = () => {
+    // Here you can add API call to save the profile
+    // For now, we'll just update localStorage
+    const updatedUser = {
+      ...localUser,
+      first_name: editableProfile.name,
+      phone_number: editableProfile.phone,
+      date_of_birth: editableProfile.dateOfBirth,
+      gender: editableProfile.gender,
+      district: editableProfile.district,
+      city: editableProfile.city,
+      province: editableProfile.province,
+      nationality: editableProfile.nationality,
+      language_preference: editableProfile.language
+    };
+    
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setLocalUser(updatedUser);
+    setShowEditModal(false);
+  };
+
   function formatDateIndo(dateStr) {
     if (!dateStr) return '—';
     try {
@@ -185,7 +243,7 @@ export default function AgentProfilePage() {
           <ProfileCard cardBg={cardBg} borderColor={borderColor} style={{ flex: '1 1 56%', padding: spacing['2xl'] }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
               <h3 style={{ margin: 0, color: accent, fontFamily: fontFamily.base, fontSize: fontSize['3xl'], fontWeight: 800 }}>Bio & Others Detail</h3>
-              <Button variant="btn2" style={{ background: accent, color: '#fff', borderRadius: 999, padding: '10px 16px', fontWeight: 800 }}>
+              <Button variant="btn2" onClick={openEditModal} style={{ background: accent, color: '#fff', borderRadius: 999, padding: '10px 16px', fontWeight: 800 }}>
                 <FontAwesomeIcon icon={faPen} style={{ marginRight: 10 }} /> Edit
               </Button>
             </div>
@@ -222,6 +280,122 @@ export default function AgentProfilePage() {
             </div>
           </ProfileCard>
         </div>
+
+        {/* Edit Profile Modal */}
+        {showEditModal && (
+          <Modal open={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Profile">
+            <div style={{...modalStyles.gridTwoColumns, marginBottom: spacing.lg}}>
+              <div>
+                <label style={modalStyles.label}>Full Name</label>
+                <input 
+                  type="text" 
+                  value={editableProfile.name} 
+                  onChange={(e) => setEditableProfile({...editableProfile, name: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+              </div>
+              <div>
+                <label style={modalStyles.label}>Phone Number</label>
+                <input 
+                  type="text" 
+                  value={editableProfile.phone} 
+                  onChange={(e) => setEditableProfile({...editableProfile, phone: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+              </div>
+            </div>
+
+            <div style={{...modalStyles.gridTwoColumns, marginBottom: spacing.lg}}>
+              <div>
+                <label style={modalStyles.label}>Date of Birth</label>
+                <input 
+                  type="date" 
+                  value={editableProfile.dateOfBirth} 
+                  onChange={(e) => setEditableProfile({...editableProfile, dateOfBirth: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+              </div>
+              <div>
+                <label style={modalStyles.label}>Gender</label>
+                <select 
+                  value={editableProfile.gender} 
+                  onChange={(e) => setEditableProfile({...editableProfile, gender: e.target.value})} 
+                  style={modalStyles.input}
+                >
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{...modalStyles.gridTwoColumns, marginBottom: spacing.lg}}>
+              <div>
+                <label style={modalStyles.label}>District / Area</label>
+                <input 
+                  type="text" 
+                  value={editableProfile.district} 
+                  onChange={(e) => setEditableProfile({...editableProfile, district: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+              </div>
+              <div>
+                <label style={modalStyles.label}>City / Regency</label>
+                <input 
+                  type="text" 
+                  value={editableProfile.city} 
+                  onChange={(e) => setEditableProfile({...editableProfile, city: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+              </div>
+            </div>
+
+            <div style={{...modalStyles.gridTwoColumns, marginBottom: spacing.lg}}>
+              <div>
+                <label style={modalStyles.label}>Province / State</label>
+                <input 
+                  type="text" 
+                  value={editableProfile.province} 
+                  onChange={(e) => setEditableProfile({...editableProfile, province: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+              </div>
+              <div>
+                <label style={modalStyles.label}>Nationality</label>
+                <select 
+                  value={editableProfile.nationality} 
+                  onChange={(e) => setEditableProfile({...editableProfile, nationality: e.target.value})} 
+                  style={modalStyles.input}
+                >
+                  <option value="">Select nationality</option>
+                  {countryNames.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div style={{marginBottom: spacing.lg}}>
+              <label style={modalStyles.label}>Language Preference</label>
+              <input 
+                type="text" 
+                value={editableProfile.language} 
+                onChange={(e) => setEditableProfile({...editableProfile, language: e.target.value})} 
+                style={modalStyles.input} 
+                placeholder="e.g., Bahasa Indonesia, English"
+              />
+            </div>
+
+            <div style={modalStyles.buttonContainer}>
+              <Button variant="btn2" onClick={saveProfile} style={{ display: 'inline-flex', gap: spacing.xs, width: '155px' }}>
+                <FontAwesomeIcon icon={faCheck} /> Save Changes
+              </Button>
+              <Button variant="btn3" onClick={() => setShowEditModal(false)} style={{ display: 'inline-flex', gap: spacing.xs }}>
+                <FontAwesomeIcon icon={faXmark} /> Cancel
+              </Button>
+            </div>
+          </Modal>
+        )}
       </main>
     </div>
   );
