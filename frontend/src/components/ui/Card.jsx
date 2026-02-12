@@ -689,6 +689,8 @@ export const ProfileCard = ({ children, style = {}, cardBg, borderColor, alignCe
       {children}
     </div>
   );
+};
+
 // Search Filters Card: Start Date / End Date / Location / Pax + Search/Clear
 export const SearchFiltersCard = ({
 	startDate,

@@ -4,8 +4,11 @@ import axios from 'axios';
 import Navbar from '../../components/ui/Navbar.jsx';
 import Button from '../../components/ui/Button.jsx';
 import { ProfileCard } from '../../components/ui/Card.jsx';
+import Modal, { modalStyles } from '../../components/ui/Modal.jsx';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPen } from '@fortawesome/free-solid-svg-icons';
+import { faPen, faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { dummyAgentProfile } from '../../mocks/mockData.js';
+import countryList from 'react-select-country-list';
 import profileImage from '../../assets/images/jeki.jpg';
 import bottomImage from '../../assets/images/landingpage2.png';
 import { colors, spacing, radius, fontSize, lineHeight, fontFamily, shadows, transitions } from '../../styles/variables.jsx';
@@ -36,6 +39,21 @@ export default function AgentProfilePage() {
   });
   const [loading, setLoading] = useState(false);
   const [profileDetail, setProfileDetail] = useState(null);
+
+  // Edit Profile Modal States
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editableProfile, setEditableProfile] = useState({
+    name: '',
+    phone: '',
+    dateOfBirth: '',
+    gender: '',
+    district: '',
+    city: '',
+    province: '',
+    nationality: '',
+    language: ''
+  });
+  const [errors, setErrors] = useState({});
 
   // Fetch user data from API if not in localStorage
   useEffect(() => {
@@ -109,12 +127,85 @@ export default function AgentProfilePage() {
     }
   }
 
-  const userEmail = localUser?.email || googleData?.email;
+  const userEmail = localUser?.email || googleData?.email || dummyAgentProfile.email;
   const displayName = googleData?.name || 
                      localUser?.first_name || 
                      localUser?.name || 
                      extractUsernameFromEmail(userEmail) || 
-                     'Dzaky Atha';
+                     dummyAgentProfile.name;
+  const username = localUser?.username || extractUsernameFromEmail(userEmail) || dummyAgentProfile.username;
+
+  // Country list for nationality dropdown
+  const countryOptions = (typeof countryList === 'function') ? (countryList().getData ? countryList().getData() : []) : [];
+  const countryNames = countryOptions.map((c) => c.label || c.value || '');
+
+  // Open Edit Profile Modal
+  const openEditModal = () => {
+    setEditableProfile({
+      name: displayName,
+      phone: localUser?.phone_number || localUser?.phone || dummyAgentProfile.phone,
+      dateOfBirth: localUser?.date_of_birth || localUser?.birth_date || dummyAgentProfile.dateOfBirth,
+      gender: localUser?.gender || dummyAgentProfile.gender,
+      district: localUser?.district || localUser?.area || dummyAgentProfile.district,
+      city: localUser?.city || localUser?.regency || dummyAgentProfile.city,
+      province: localUser?.province || localUser?.state || dummyAgentProfile.province,
+      nationality: localUser?.nationality || dummyAgentProfile.nationality,
+      language: localUser?.language_preference || dummyAgentProfile.language
+    });
+    setShowEditModal(true);
+  };
+
+  // Save Profile Changes
+  const saveProfile = () => {
+    // Validate before saving
+    const validation = validateEditableProfile(editableProfile);
+    if (!validation.valid) {
+      setErrors(validation.errors);
+      return;
+    }
+
+    // Here you can add API call to save the profile
+    // For now, we'll just update localStorage
+    const updatedUser = {
+      ...localUser,
+      first_name: editableProfile.name,
+      phone_number: editableProfile.phone,
+      date_of_birth: editableProfile.dateOfBirth,
+      gender: editableProfile.gender,
+      district: editableProfile.district,
+      city: editableProfile.city,
+      province: editableProfile.province,
+      nationality: editableProfile.nationality,
+      language_preference: editableProfile.language
+    };
+    
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setLocalUser(updatedUser);
+    setShowEditModal(false);
+    setErrors({});
+  };
+
+  function validateEditableProfile(profile) {
+    const e = {};
+    const name = (profile.name || '').trim();
+    const phone = (profile.phone || '').trim();
+    const dob = profile.dateOfBirth;
+
+    if (!name) e.name = 'Full name is required.';
+    const phonePattern = /^\+?[0-9\s\-().]{6,20}$/;
+    if (!phone) e.phone = 'Phone number is required.';
+    else if (!phonePattern.test(phone)) e.phone = 'Enter a valid phone number.';
+
+    if (dob) {
+      const d = new Date(dob);
+      const now = new Date();
+      if (isNaN(d.getTime())) e.dateOfBirth = 'Invalid date format.';
+      else if (d > now) e.dateOfBirth = 'Date of birth cannot be in the future.';
+    }
+
+    return { valid: Object.keys(e).length === 0, errors: e };
+  }
+  const isFormValid = validateEditableProfile(editableProfile).valid;
 
   function formatDateIndo(dateStr) {
     if (!dateStr) return '—';
@@ -137,20 +228,21 @@ export default function AgentProfilePage() {
                     localUser?.profile?.created_at ||
                     profileDetail?.created_at ||
                     localUser?.profile?.createdAt ||
-                    localUser?.DATE_JOINED;
-  const birthDate = localUser?.date_of_birth || localUser?.birth_date;
+                    localUser?.DATE_JOINED ||
+                    dummyAgentProfile.joinedDate;
+  const birthDate = localUser?.date_of_birth || localUser?.birth_date || dummyAgentProfile.dateOfBirth;
 
   const infoRows = [
-    ['Joined Since', joinedDate ? formatDateIndo(joinedDate) : '—'],
-    ['Email', userEmail || 'dzakyatha8@gmail.com'],
-    ['Phone Number', localUser?.phone_number || localUser?.phone || '0812345678910'],
-    ['Date of Birth', birthDate ? formatDateIndo(birthDate) : '07 Maret 2005'],
-    ['Gender', localUser?.gender || 'Male'],
-    ['District / Area', localUser?.district || localUser?.area || 'Jatinangor'],
-    ['City / Regency', localUser?.city || localUser?.regency || 'Sumedang'],
-    ['Province / State', localUser?.province || localUser?.state || 'West Java'],
-    ['Nationality', localUser?.nationality || 'Indonesia'],
-    ['Language preference', localUser?.language_preference || 'Bahasa Indonesia'],
+    ['Joined Since', joinedDate ? formatDateIndo(joinedDate) : formatDateIndo(dummyAgentProfile.joinedDate)],
+    ['Email', userEmail],
+    ['Phone Number', localUser?.phone_number || localUser?.phone || dummyAgentProfile.phone],
+    ['Date of Birth', birthDate ? formatDateIndo(birthDate) : formatDateIndo(dummyAgentProfile.dateOfBirth)],
+    ['Gender', localUser?.gender || dummyAgentProfile.gender],
+    ['District / Area', localUser?.district || localUser?.area || dummyAgentProfile.district],
+    ['City / Regency', localUser?.city || localUser?.regency || dummyAgentProfile.city],
+    ['Province / State', localUser?.province || localUser?.state || dummyAgentProfile.province],
+    ['Nationality', localUser?.nationality || dummyAgentProfile.nationality],
+    ['Language preference', localUser?.language_preference || dummyAgentProfile.language],
   ];
 
   return (
@@ -170,7 +262,7 @@ export default function AgentProfilePage() {
               <h2 style={{ margin: 0, color: accent, fontFamily: fontFamily.base, fontSize: fontSize['3xl'], fontWeight: 800 }}>
                 {displayName}
               </h2>
-              <div style={{ marginTop: spacing.sm, color: colors.textLight, fontFamily: fontFamily.base, fontSize: fontSize.base }}>@jekiiiii123</div>
+              <div style={{ marginTop: spacing.sm, color: colors.textLight, fontFamily: fontFamily.base, fontSize: fontSize.base }}>@{username}</div>
             </div>
 
             <div style={{ marginTop: spacing['2xl'], width: 420, height: 420, borderRadius: 999, overflow: 'hidden', border: `10px solid ${accent}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', background: colors.bg }}>
@@ -182,7 +274,7 @@ export default function AgentProfilePage() {
           <ProfileCard cardBg={cardBg} borderColor={borderColor} style={{ flex: '1 1 56%', padding: spacing['2xl'] }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
               <h3 style={{ margin: 0, color: accent, fontFamily: fontFamily.base, fontSize: fontSize['3xl'], fontWeight: 800 }}>Bio & Others Detail</h3>
-              <Button variant="btn2" style={{ background: accent, color: '#fff', borderRadius: 999, padding: '10px 16px', fontWeight: 800 }}>
+              <Button variant="btn2" onClick={openEditModal} style={{ background: accent, color: '#fff', borderRadius: 999, padding: '10px 16px', fontWeight: 800 }}>
                 <FontAwesomeIcon icon={faPen} style={{ marginRight: 10 }} /> Edit
               </Button>
             </div>
@@ -219,6 +311,130 @@ export default function AgentProfilePage() {
             </div>
           </ProfileCard>
         </div>
+
+        {/* Edit Profile Modal */}
+        {showEditModal && (
+          <Modal open={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Profile">
+            <div style={{...modalStyles.gridTwoColumns, marginBottom: spacing.lg}}>
+              <div>
+                <label style={modalStyles.label}>Full Name</label>
+                <input 
+                  type="text" 
+                  value={editableProfile.name} 
+                  onChange={(e) => setEditableProfile({...editableProfile, name: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+                {errors.name && <div style={{ color: 'red', fontSize: 12, marginTop: 6 }}>{errors.name}</div>}
+              </div>
+              <div>
+                <label style={modalStyles.label}>Phone Number</label>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    pattern="^[0-9+()\\s-]{7,20}$"
+                    value={editableProfile.phone}
+                    onChange={(e) => {
+                      const rawValue = e.target.value;
+                      const sanitizedValue = rawValue.replace(/[^0-9+()\\s-]/g, '');
+                      setEditableProfile({ ...editableProfile, phone: sanitizedValue });
+                    }}
+                    style={modalStyles.input}
+                  />
+                {errors.phone && <div style={{ color: 'red', fontSize: 12, marginTop: 6 }}>{errors.phone}</div>}
+              </div>
+            </div>
+
+            <div style={{...modalStyles.gridTwoColumns, marginBottom: spacing.lg}}>
+              <div>
+                <label style={modalStyles.label}>Date of Birth</label>
+                <input 
+                  type="date" 
+                  value={editableProfile.dateOfBirth} 
+                  onChange={(e) => setEditableProfile({...editableProfile, dateOfBirth: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+                {errors.dateOfBirth && <div style={{ color: 'red', fontSize: 12, marginTop: 6 }}>{errors.dateOfBirth}</div>}
+              </div>
+              <div>
+                <label style={modalStyles.label}>Gender</label>
+                <select 
+                  value={editableProfile.gender} 
+                  onChange={(e) => setEditableProfile({...editableProfile, gender: e.target.value})} 
+                  style={modalStyles.input}
+                >
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{...modalStyles.gridTwoColumns, marginBottom: spacing.lg}}>
+              <div>
+                <label style={modalStyles.label}>District / Area</label>
+                <input 
+                  type="text" 
+                  value={editableProfile.district} 
+                  onChange={(e) => setEditableProfile({...editableProfile, district: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+              </div>
+              <div>
+                <label style={modalStyles.label}>City / Regency</label>
+                <input 
+                  type="text" 
+                  value={editableProfile.city} 
+                  onChange={(e) => setEditableProfile({...editableProfile, city: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+              </div>
+            </div>
+
+            <div style={{...modalStyles.gridTwoColumns, marginBottom: spacing.lg}}>
+              <div>
+                <label style={modalStyles.label}>Province / State</label>
+                <input 
+                  type="text" 
+                  value={editableProfile.province} 
+                  onChange={(e) => setEditableProfile({...editableProfile, province: e.target.value})} 
+                  style={modalStyles.input} 
+                />
+              </div>
+              <div>
+                <label style={modalStyles.label}>Nationality</label>
+                <select 
+                  value={editableProfile.nationality} 
+                  onChange={(e) => setEditableProfile({...editableProfile, nationality: e.target.value})} 
+                  style={modalStyles.input}
+                >
+                  <option value="">Select nationality</option>
+                  {countryNames.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div style={{marginBottom: spacing.lg}}>
+              <label style={modalStyles.label}>Language Preference</label>
+              <input 
+                type="text" 
+                value={editableProfile.language} 
+                onChange={(e) => setEditableProfile({...editableProfile, language: e.target.value})} 
+                style={modalStyles.input} 
+                placeholder="e.g., Bahasa Indonesia, English"
+              />
+            </div>
+
+            <div style={modalStyles.buttonContainer}>
+              <Button variant="btn2" onClick={saveProfile} disabled={!isFormValid} style={{ display: 'inline-flex', gap: spacing.xs, width: '155px', opacity: isFormValid ? 1 : 0.5 }}>
+                <FontAwesomeIcon icon={faCheck} /> Save Changes
+              </Button>
+              <Button variant="btn3" onClick={() => setShowEditModal(false)} style={{ display: 'inline-flex', gap: spacing.xs }}>
+                <FontAwesomeIcon icon={faXmark} /> Cancel
+              </Button>
+            </div>
+          </Modal>
+        )}
       </main>
     </div>
   );
