@@ -16,22 +16,18 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
-from users.views import (
-    GoogleLogin,
-    CustomLoginView,
-    CustomRegisterView,
-    CustomLogoutView
-)
+from users.views import GoogleAuth, GoogleRegisterComplete, ProfileView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # Custom Authentication Endpoints with Logging
-    path('api/auth/login/', CustomLoginView.as_view(), name='rest_login'),
-    path('api/auth/logout/', CustomLogoutView.as_view(), name='rest_logout'),
-    path('api/auth/registration/', CustomRegisterView.as_view(), name='rest_register'),
-    path('api/auth/google/', GoogleLogin.as_view(), name='google_login'),
-    
-    # Other dj-rest-auth endpoints
-    path('api/auth/core/', include('dj_rest_auth.urls')),
+    # Authentication Endpoints
+    path('api/auth/', include('dj_rest_auth.urls')), # Login, Logout, User details
+    path('api/auth/registration/', include('dj_rest_auth.registration.urls')), # Registration
+    path('api/auth/google/', GoogleAuth.as_view(), name='google_auth'), # Google Auth Step 1
+    path('api/auth/google/complete/', GoogleRegisterComplete.as_view(), name='google_complete'), # Google Auth Step 2 (bc ada choose role)
+    path('api/users/profile/me/', ProfileView.as_view(), name='profile-me'), # Profile mnagement
+
+    # Gateway Endpoint for Microservices
+    path('api/', include('gateway.urls')),
 ]
