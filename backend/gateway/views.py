@@ -21,6 +21,10 @@ class GatewayProxyView(APIView):
             base_url = settings.TRAVEL_PLANNER_URL
             # Map external 'planner' to internal 'perencanaan'
             internal_path = f"perencanaan/{path.lstrip('/')}"
+        elif service == 'opentrip':
+            base_url = settings.OPEN_TRIP_URL
+            # Map external 'opentrip' to internal 'opentrip'
+            internal_path = f"opentrip/{path.lstrip('/')}"
         else:
             return HttpResponse("Service not found", status=404)
 
