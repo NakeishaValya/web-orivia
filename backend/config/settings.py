@@ -186,12 +186,14 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.ScopedRateThrottle',
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',   # Guests (for views using throttle_scope="anon")
-        'user': '1000/hour',  # Logged in users (for views using throttle_scope="user")
-    },
+        'anon': '100/hour',           # Anonymous users
+        'user': '1000/hour',          # Authenticated users
+        'dj_rest_auth': '10/minute',  # Add this for dj-rest-auth views (login, register, etc.)
+    }
 }
 
 # JWT Cookie Settings
