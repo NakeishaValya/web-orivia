@@ -11,7 +11,7 @@ services:
       - orivia_redis_data:/data
 
   redis-insight:
-    image: redis/redisinsight:latest
+    image: redis/redisinsight:2.58.0
     container_name: orivia_redis_insight
     ports:
       - "5540:5540"
