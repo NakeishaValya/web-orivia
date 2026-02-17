@@ -185,6 +185,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',           # Anonymous users
+        'user': '1000/hour',          # Authenticated users
+        'dj_rest_auth': '10/minute',  # Add this for dj-rest-auth views (login, register, etc.)
+    }
 }
 
 # JWT Cookie Settings
@@ -249,30 +258,35 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {name} {funcName} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
+            'format': '{levelname} {asctime} {module} {message}',
             'style': '{',
         },
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'simple',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'logs/debug.log',
+            'formatter': 'verbose',
         },
     },
     'loggers': {
         'users': {
-            'handlers': ['console'],
+            'handlers': ['console', 'file'],
             'level': 'INFO',
             'propagate': False,
         },
+        'gateway': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',  # Set to DEBUG in development for detailed logs
+            'propagate': False,
+        },
         'django.security': {
-            'handlers': ['console'],
-            'level': 'WARNING',
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
             'propagate': False,
         },
     },
@@ -294,3 +308,22 @@ if LOGGING_ENABLED:
 # Microservices URL
 TRAVEL_PLANNER_URL = config('TRAVEL_PLANNER_URL', default='http://localhost:8001') # localhost for development
 OPEN_TRIP_URL = config('OPEN_TRIP_URL', default='http://localhost:8002')
+
+# Redis Configuration
+if TESTING:
+    # Use in-memory cache during tests to avoid external Redis dependency
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": config('REDIS_LOCATION', default='redis://127.0.0.1:6379/1'),
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            }
+        }
+    }
