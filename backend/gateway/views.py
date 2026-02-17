@@ -75,7 +75,7 @@ class GatewayProxyView(APIView):
             base_url = settings.TRAVEL_PLANNER_URL
             # Map external 'planner' to internal 'perencanaan'
             internal_path = f"perencanaan/{path.lstrip('/')}"
-        elif service == 'opentrip':
+        elif service_name == 'opentrip':
             base_url = settings.OPEN_TRIP_URL
             # Map external 'opentrip' to internal 'opentrip'
             internal_path = f"opentrip/{path.lstrip('/')}"
@@ -88,7 +88,7 @@ class GatewayProxyView(APIView):
         url = f"{base_url}/api/{internal_path}"
         
         # Log request details (use DEBUG for PII/high-volume data)
-        logger.info(f"Gateway proxying {request.method} to service: {service}")
+        logger.info(f"Gateway proxying {request.method} to service: {service_name}")
         logger.debug(f"Target URL: {url}")
         logger.debug(f"User ID: {request.user.id}, Role: {request.user.role}")
         
@@ -102,15 +102,15 @@ class GatewayProxyView(APIView):
                 if key.lower() not in excluded_headers
             }
             
-            # Security: Always inject user identity from authenticated server-side context
-            # This ensures microservices receive verified user information
-            headers['X-User-ID'] = str(request.user.id)
-            headers['X-User-Role'] = request.user.role
-            
             # Get headers from original request
             if hasattr(request, '_request') and hasattr(request._request, 'headers'):
                 headers = {key: value for key, value in request._request.headers.items() 
-                          if key.lower() not in ['host', 'content-length']}
+                          if key.lower() not in ['host', 'content-length', 'x-user-id', 'x-user-role']}
+            
+            # Security: Always inject user identity from authenticated server-side context
+            # This ensures microservices receive verified user information (never trust client)
+            headers['X-User-ID'] = str(request.user.id)
+            headers['X-User-Role'] = request.user.role
             
             # Ensure Authorization header is set
             if 'Authorization' not in headers and request.auth:
@@ -123,7 +123,7 @@ class GatewayProxyView(APIView):
 
             microservice_response = requests.request(
                 method=request.method,
-                url=target_url,
+                url=url,
                 headers=headers,
                 data=request.body,
                 params=request.query_params.dict(),
@@ -144,17 +144,17 @@ class GatewayProxyView(APIView):
                     pass
             # Log response metadata only (avoid logging sensitive payload data)
             logger.info(
-                f"Microservice response: status={response.status_code}, "
-                f"content-type={response.headers.get('Content-Type')}, "
-                f"content-length={len(response.content)}"
+                f"Microservice response: status={microservice_response.status_code}, "
+                f"content-type={microservice_response.headers.get('Content-Type')}, "
+                f"content-length={len(microservice_response.content)}"
             )
             
             # Only log response body at DEBUG level with content-type restrictions
             if logger.isEnabledFor(logging.DEBUG):
-                content_type = response.headers.get('Content-Type', '')
+                content_type = microservice_response.headers.get('Content-Type', '')
                 # Only sample safe content types (avoid logging binary/sensitive data)
                 if 'application/json' in content_type or 'text/' in content_type:
-                    logger.debug(f"Response sample: {response.text[:200]}...")
+                    logger.debug(f"Response sample: {microservice_response.text[:200]}...")
 
             # Return microservice response to frontend
             response = HttpResponse(
@@ -167,7 +167,7 @@ class GatewayProxyView(APIView):
 
         except requests.exceptions.RequestException as e:
             # Log full exception details with stack trace for debugging
-            logger.exception(f"Gateway error proxying to {service}: {type(e).__name__}")
+            logger.exception(f"Gateway error proxying to {service_name}: {type(e).__name__}")
             # Return generic error message to client (don't leak internal details)
             return HttpResponse("Service temporarily unavailable", status=503)
 
