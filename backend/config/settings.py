@@ -186,12 +186,11 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle'
+        'rest_framework.throttling.ScopedRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',   # Guests
-        'user': '1000/hour',  # Logged in users
+        'anon': '100/hour',   # Guests (for views using throttle_scope="anon")
+        'user': '1000/hour',  # Logged in users (for views using throttle_scope="user")
     },
 }
 
@@ -300,12 +299,20 @@ TRAVEL_PLANNER_URL = config('TRAVEL_PLANNER_URL', default='http://localhost:8001
 OPEN_TRIP_URL = config('OPEN_TRIP_URL', default='http://localhost:8002')
 
 # Redis Configuration
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": config('REDIS_LOCATION', default='redis://127.0.0.1:6379/1'),
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+if TESTING:
+    # Use in-memory cache during tests to avoid external Redis dependency
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         }
     }
-}
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": config('REDIS_LOCATION', default='redis://127.0.0.1:6379/1'),
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            }
+        }
+    }
