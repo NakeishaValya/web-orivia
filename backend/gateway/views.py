@@ -41,9 +41,14 @@ class GatewayProxyView(APIView):
         path = kwargs.get('path', '')
 
         # Cache Key
-        # If User A and User B see the same trip list, serve the same cached response to both
         query_string = request.META.get('QUERY_STRING', '')
-        cache_key = f"gateway:{service_name}:{path}:{query_string}"
+        # include a user-specific component to avoid serving one user's cached response to another authenticated user
+        # for anonymous users, use a common cache key without user identifier
+        user_identifier = getattr(request.user, 'id', None) or getattr(request.user, 'pk', None)
+        if user_identifier is not None:
+            cache_key = f"gateway:{service_name}:{path}:{query_string}:user:{user_identifier}"
+        else:
+            cache_key = f"gateway:{service_name}:{path}:{query_string}:anon"
         
         # Only cache safe GET requests for opentrip service
         should_cache = (request.method == 'GET' and service_name == 'opentrip')
