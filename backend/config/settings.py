@@ -80,6 +80,7 @@ INSTALLED_APPS = [
 
     # Local apps
     'users',
+    'gateway',
 ]
 
 # Site ID for django-allauth
@@ -184,6 +185,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',           # Anonymous users
+        'user': '1000/hour',          # Authenticated users
+        'dj_rest_auth': '10/minute',  # Add this for dj-rest-auth views (login, register, etc.)
+    }
 }
 
 # JWT Cookie Settings
@@ -192,20 +202,24 @@ REST_AUTH = {
     'JWT_AUTH_COOKIE': 'orivia-auth',
     'JWT_AUTH_REFRESH_COOKIE': 'orivia-refresh',
     'USER_DETAILS_SERIALIZER': 'users.serializers.CustomUserSerializer',
-    'REGISTER_SERIALIZER': 'users.serializers.CustomRegisterSerializer',  # Add this
+    'REGISTER_SERIALIZER': 'users.serializers.CustomRegisterSerializer',
     'JWT_AUTH_HTTPONLY': True,
     'JWT_AUTH_SECURE': not DEBUG,
     'JWT_AUTH_SAMESITE': 'Lax',
+    'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
 }
 
-# AllAuth Configuration
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+# Django Allauth Configuration
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 
-# New django-allauth configuration
-ACCOUNT_LOGIN_METHODS = {'email'}
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+# Authentication Backends
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
 
 # JWT Settings (SimpleJWT)
 SIMPLE_JWT = {
@@ -244,30 +258,35 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {name} {funcName} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
+            'format': '{levelname} {asctime} {module} {message}',
             'style': '{',
         },
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'simple',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'logs/debug.log',
+            'formatter': 'verbose',
         },
     },
     'loggers': {
         'users': {
-            'handlers': ['console'],
+            'handlers': ['console', 'file'],
             'level': 'INFO',
             'propagate': False,
         },
+        'gateway': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',  # Set to DEBUG in development for detailed logs
+            'propagate': False,
+        },
         'django.security': {
-            'handlers': ['console'],
-            'level': 'WARNING',
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
             'propagate': False,
         },
     },
@@ -285,3 +304,26 @@ if LOGGING_ENABLED:
     }
     LOGGING['loggers']['users']['handlers'].append('file')
     LOGGING['loggers']['django.security']['handlers'].append('file')
+
+# Microservices URL
+TRAVEL_PLANNER_URL = config('TRAVEL_PLANNER_URL', default='http://localhost:8001') # localhost for development
+OPEN_TRIP_URL = config('OPEN_TRIP_URL', default='http://localhost:8002')
+
+# Redis Configuration
+if TESTING:
+    # Use in-memory cache during tests to avoid external Redis dependency
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": config('REDIS_LOCATION', default='redis://127.0.0.1:6379/1'),
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            }
+        }
+    }
