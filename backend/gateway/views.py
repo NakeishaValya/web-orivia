@@ -255,25 +255,30 @@ class GatewayProxyView(APIView):
         # Initialize headers dict
         self.headers = {}
         
-        # Wrap the raw WSGIRequest into a DRF Request
-        # adds .query_params, .user, .auth, etc.
-        request = self.initialize_request(request, *args, **kwargs)
-        self.request = request
-        self.args = args
-        self.kwargs = kwargs
-        self.format_kwarg = self.get_format_suffix(**kwargs)
-
-        # Trigger DRF's Auth & Permission checks (including throttling)
         try:
-            self.initial(request, *args, **kwargs)
-        except Exception as exc:
-            response = self.handle_exception(exc)
-            self.response = self.finalize_response(request, response, *args, **kwargs)
-            return self.response
+            # Wrap the raw WSGIRequest into a DRF Request
+            # adds .query_params, .user, .auth, etc.
+            request = self.initialize_request(request, *args, **kwargs)
+            self.request = request
+            self.args = args
+            self.kwargs = kwargs
+            self.format_kwarg = self.get_format_suffix(**kwargs)
 
-        # Determine target service
-        service_name = kwargs.get('service')
-        path = kwargs.get('path', '')
+            # Trigger DRF's Auth & Permission checks (including throttling)
+            try:
+                self.initial(request, *args, **kwargs)
+            except Exception as exc:
+                response = self.handle_exception(exc)
+                self.response = self.finalize_response(request, response, *args, **kwargs)
+                return self.response
+
+            # Determine target service
+            service_name = kwargs.get('service')
+            path = kwargs.get('path', '')
+            logger.info(f"[GATEWAY] Processing request: service={service_name}, path={path}, method={request.method}")
+        except Exception as e:
+            logger.exception(f"[GATEWAY] CRITICAL ERROR in dispatch setup: {type(e).__name__}: {str(e)}")
+            return HttpResponse(f"Internal Server Error: {type(e).__name__}", status=500)
 
         # Cache Key
         query_string = request.META.get('QUERY_STRING', '')
@@ -341,18 +346,24 @@ class GatewayProxyView(APIView):
             
             # Security: Always inject user identity from authenticated server-side context
             # This ensures microservices receive verified user information (never trust client)
-            headers['X-User-ID'] = str(request.user.id)
-            headers['X-User-Role'] = request.user.role
+            try:
+                headers['X-User-ID'] = str(request.user.id)
+                headers['X-User-Role'] = request.user.role
+                logger.debug(f"User context: ID={headers['X-User-ID']}, Role={headers['X-User-Role']}")
+            except Exception as e:
+                logger.exception(f"[GATEWAY] ERROR setting user headers: {type(e).__name__}: {str(e)}")
+                raise
             
             # Ensure Authorization header is set
             if 'Authorization' not in headers and request.auth:
                 headers['Authorization'] = f"Bearer {str(request.auth)}"
-            logger.debug(f"Forwarding with user context: ID={headers['X-User-ID']}, Role={headers['X-User-Role']}")
+            logger.debug(f"Forwarding with user context: ID={headers.get('X-User-ID')}, Role={headers.get('X-User-Role')}, Has Auth: {'Authorization' in headers}")
             
             # Explicitly set Content-Type if provided
             if request.content_type:
                 headers['Content-Type'] = request.content_type
 
+            logger.info(f"[GATEWAY] Forwarding {request.method} request to: {url}")
             microservice_response = requests.request(
                 method=request.method,
                 url=url,
@@ -361,6 +372,7 @@ class GatewayProxyView(APIView):
                 params=request.query_params.dict(),
                 timeout=10
             )
+            logger.info(f"[GATEWAY] Received response: status={microservice_response.status_code}")
 
             # Save to Cache if applicable
             if should_cache and microservice_response.status_code == 200:
