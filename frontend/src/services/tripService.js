@@ -140,8 +140,11 @@ export async function fetchLatestTripByEmail(email, role) {
     if (error.response?.status === 404) {
       // No trips found for this user
       return null;
-    } else if (error.response?.status === 503 || error.code === 'ECONNREFUSED') {
-      // Service unavailable
+    } else if (error.response?.status === 503) {
+      // Service responded but is unavailable
+      throw new Error('Open-trip-system service is currently unavailable');
+    } else if (!error.response && error.code === 'ECONNREFUSED') {
+      // Network error: service cannot be reached
       throw new Error('Open-trip-system service is currently unavailable');
     } else if (error.message) {
       throw error;

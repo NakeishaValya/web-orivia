@@ -1,6 +1,8 @@
 import uuid
+import json
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 
 # =============================================
@@ -103,8 +105,46 @@ class Expense(models.Model):
 # Open-Trip Models (mirrors open-trip-system)
 # =============================================
 
+def validate_itinerary_destinations(value):
+    """
+    Basic validator for the `itinerary_destinations` JSONField.
+
+    Acceptable values:
+    - None
+    - a Python dict (object) or list (array)
+    - a JSON-formatted string that decodes to a dict or list
+
+    The gateway mirrors data from the open-trip microservice; this
+    validator prevents storing primitive strings/numbers and helps catch
+    obviously malformed payloads early. For full schema validation,
+    consider adding `jsonschema` checks or moving strict validation to
+    the open-trip service.
+    """
+    if value is None:
+        return
+    # If the value is a string, try to parse it as JSON
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except Exception as e:
+            raise ValidationError(f"itinerary_destinations must be valid JSON (decode error: {e})")
+        value = parsed
+
+    # Now value should be a dict or list
+    if not isinstance(value, (dict, list)):
+        raise ValidationError("itinerary_destinations must be a JSON object or array")
+
+
 class Trip(models.Model):
-    """Trip — aggregate root dari open-trip-system."""
+    """Trip — aggregate root dari open-trip-system.
+
+    Expected `itinerary_destinations` shape
+    - Typically a list or object describing destinations used by the
+      frontend (e.g. an array of destination objects or a dictionary with
+      routing info). This field may be null/blank, but when present it
+      must be valid JSON (object or array). Use `validate_itinerary_destinations`
+      to enforce this at save-time.
+    """
     trip_id = models.CharField("Trip ID", max_length=100, primary_key=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -116,7 +156,12 @@ class Trip(models.Model):
     capacity = models.PositiveIntegerField("Kapasitas")
     is_available = models.BooleanField("Tersedia?", default=True)
     guide_name = models.CharField("Guide", max_length=255, blank=True, default="")
-    itinerary_destinations = models.JSONField("Destinasi Itinerary", blank=True, null=True)
+    itinerary_destinations = models.JSONField(
+        "Destinasi Itinerary",
+        blank=True,
+        null=True,
+        validators=[validate_itinerary_destinations],
+    )
     itinerary_description = models.TextField("Deskripsi Itinerary", blank=True, default="")
     synced_at = models.DateTimeField("Terakhir Disinkronkan", auto_now=True)
 
