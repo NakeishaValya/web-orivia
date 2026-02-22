@@ -114,8 +114,8 @@ export async function fetchLatestTripByEmail(email, role) {
       throw new Error('Email is required to fetch latest trip');
     }
 
-    // Call open-trip-system microservice directly
-    const res = await opentripAPI.get('/opentrip/trips/latest', {
+    // Call through Django gateway proxy to open-trip-system
+    const res = await api.get('/opentrip/trips/latest', {
       params: { email }
     });
 
