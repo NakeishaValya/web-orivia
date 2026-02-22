@@ -151,6 +151,24 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Password Hashing (optimized for development speed)
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+]
+
+# Reduce iterations for development (faster login/registration)
+# Default is 720,000 iterations which takes ~2-3 seconds
+# For development, use 50,000 (still secure but much faster)
+# For production, increase this to 720,000 or higher
+if DEBUG:
+    from django.contrib.auth.hashers import PBKDF2PasswordHasher
+    class FastPBKDF2PasswordHasher(PBKDF2PasswordHasher):
+        iterations = 50000  # Fast for development
+    PASSWORD_HASHERS = [
+        'config.settings.FastPBKDF2PasswordHasher',
+        'django.contrib.auth.hashers.PBKDF2PasswordHasher',  # Fallback for existing passwords
+    ]
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
@@ -185,6 +203,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',           # Anonymous users
+        'user': '1000/hour',          # Authenticated users
+        'dj_rest_auth': '10/minute',  # Add this for dj-rest-auth views (login, register, etc.)
+    }
 }
 
 # JWT Cookie Settings
@@ -193,20 +220,24 @@ REST_AUTH = {
     'JWT_AUTH_COOKIE': 'orivia-auth',
     'JWT_AUTH_REFRESH_COOKIE': 'orivia-refresh',
     'USER_DETAILS_SERIALIZER': 'users.serializers.CustomUserSerializer',
-    'REGISTER_SERIALIZER': 'users.serializers.CustomRegisterSerializer',  # Add this
+    'REGISTER_SERIALIZER': 'users.serializers.CustomRegisterSerializer',
     'JWT_AUTH_HTTPONLY': True,
     'JWT_AUTH_SECURE': not DEBUG,
     'JWT_AUTH_SAMESITE': 'Lax',
+    'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
 }
 
-# AllAuth Configuration
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+# Django Allauth Configuration
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 
-# New django-allauth configuration
-ACCOUNT_LOGIN_METHODS = {'email'}
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+# Authentication Backends
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
 
 # JWT Settings (SimpleJWT)
 SIMPLE_JWT = {
@@ -294,4 +325,48 @@ if LOGGING_ENABLED:
 
 # Microservices URL
 TRAVEL_PLANNER_URL = config('TRAVEL_PLANNER_URL', default='http://localhost:8001') # localhost for development
-OPEN_TRIP_URL = config('OPEN_TRIP_URL', default='http://localhost:8002')
+OPEN_TRIP_URL = config('OPEN_TRIP_URL', default='http://localhost:8005')
+
+# Redis Configuration
+if TESTING:
+    # Use in-memory cache during tests to avoid external Redis dependency
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+else:
+    _redis_available = False
+    try:
+        import redis as _redis_lib
+        _r = _redis_lib.Redis.from_url(
+            config('REDIS_LOCATION', default='redis://127.0.0.1:6379/1'),
+            socket_connect_timeout=1,
+        )
+        _r.ping()
+        _redis_available = True
+    except Exception:
+        pass
+
+    if _redis_available:
+        CACHES = {
+            "default": {
+                "BACKEND": "django_redis.cache.RedisCache",
+                "LOCATION": config('REDIS_LOCATION', default='redis://127.0.0.1:6379/1'),
+                "OPTIONS": {
+                    "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                }
+            }
+        }
+    else:
+        import warnings
+        warnings.warn(
+            "Redis is not available — falling back to in-memory cache. "
+            "Run 'docker compose -f redis-docker-compose.yml up -d' to start Redis.",
+            stacklevel=1,
+        )
+        CACHES = {
+            "default": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            }
+        }
