@@ -14,7 +14,26 @@ import api, { opentripAPI, plannerAPI } from './api';
  */
 function mapTripFromPlanner(raw) {
   console.log('[mapTripFromPlanner] Mapping planner data:', raw);
-  
+
+  const addDaysIso = (iso, days) => {
+    try {
+      const d = new Date(iso);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0, 10);
+    } catch (e) {
+      return null;
+    }
+  };
+
+    const start = raw.departure_date || raw.durasi_mulai || null;
+  let end = raw.durasi_selesai || raw.end_date || null;
+  if (!end && start && (raw.jumlah_hari || raw.jumlah_hari === 0)) {
+    const days = Number(raw.jumlah_hari) || 0;
+    if (days > 0) {
+      end = addDaysIso(start, days - 1);
+    }
+  }
+
   return {
     trip_id: raw.id_rencana,
     trip_name: raw.nama,
@@ -23,8 +42,8 @@ function mapTripFromPlanner(raw) {
     destination_type: raw.destination_type || '',
     price: raw.harga || 0,
     pax: raw.slot || 0,
-    departure_date: raw.durasi_mulai || null,
-    end_date: raw.durasi_selesai || null,
+    startDate: start,
+    endDate: end,
     duration: {
       days: raw.jumlah_hari || 0,
       nights: raw.jumlah_malam || 0
@@ -111,6 +130,43 @@ export async function fetchTrips() {
   const res = await api.get('/opentrip/trips/');
   const raw = Array.isArray(res.data) ? res.data : [];
   const mapped = raw.map(mapTrip);
+  return { trips: mapped, tripSchedules: buildSchedules(mapped) };
+}
+
+/** Fetch all trips from Travel Planner (ignore id_user filter) via authenticated gateway */
+export async function fetchPlannerTrips() {
+  // Use authenticated 'api' instance to go through gateway with JWT token
+  const res = await api.get('/planner/trips/all');
+  const raw = Array.isArray(res.data) ? res.data : [];
+
+  // Map planner records into frontend trip shape
+  const mapped = raw.map((r) => {
+    const p = mapTripFromPlanner(r);
+    const days = p.duration?.days ?? (r.jumlah_hari ?? 0);
+    const nights = p.duration?.nights ?? (r.jumlah_malam ?? 0);
+    const startDate = r.departure_date || r.durasi_mulai || p.startDate || null;
+    const endDate = r.durasi_selesai || p.endDate || null;
+
+    return {
+      tripId: p.trip_id || p.id_rencana || r.id_rencana,
+      name: p.trip_name || p.nama || r.nama,
+      description: p.deskripsi || r.deskripsi || '',
+      location: { state: r.provinsi || p.provinsi || '', country: r.negara || p.negara || '' },
+      price: p.harga || r.harga || p.price || 0,
+      pax: p.slot || r.slot || 0,
+      duration: { days, nights },
+      image: p.image || r.image || null,
+      destinationType: p.destination_type || p.destinationType || r.destination_type || '',
+      // DO NOT use date ranges for planner data; expose explicit start/end fields
+      date: null,
+      startDate: startDate,
+      endDate: endDate,
+      jumlah_hari: days,
+      jumlah_malam: nights,
+      _plannerRaw: r,
+    };
+  });
+
   return { trips: mapped, tripSchedules: buildSchedules(mapped) };
 }
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {colors,spacing,radius,fontSize,transitions,fontFamily,} from '../../styles/variables.jsx';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -7,10 +7,29 @@ import Navbar from '../../components/ui/Navbar.jsx';
 import Button from '../../components/ui/Button.jsx';
 import { StyledTripCard, GridTripCard } from '../../components/ui/Card.jsx';
 import tripExploreBg from '../../assets/images/tripexplorebg.png';
-import { trips } from '../../mocks/mockData.js';
+import { fetchPlannerTrips } from '../../services/tripService.js';
 
 export default function AgentTripPage() {
   const navigate = useNavigate();
+  const [trips, setTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetchPlannerTrips();
+        if (!mounted) return;
+        setTrips(res.trips || []);
+      } catch (e) {
+        console.error('Failed to fetch planner trips', e);
+        if (mounted) setTrips([]);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const styles = {
     page: {
@@ -90,16 +109,21 @@ export default function AgentTripPage() {
 
         <div className="cards-scroll" style={{ flex: 1, overflowX: 'hidden' }}>
           <section style={{ ...styles.grid, width: '100%', overflow: 'visible', marginTop: spacing.md }}>
-            {trips.map(trip => (
-              <GridTripCard
-                key={trip.tripId}
-                trip={trip}
-                onClick={() => navigate(`/trip/edit?tripId=${trip.tripId}`)}
-              />
-            ))}
+            {loading ? (
+              <div style={{ color: colors.accent5 }}>Loading trips...</div>
+            ) : (
+              trips.map(trip => (
+                <GridTripCard
+                  key={trip.tripId}
+                  trip={trip}
+                  onClick={() => navigate(`/trip/edit?tripId=${trip.tripId}`)}
+                />
+              ))
+            )}
           </section>
         </div>
       </main>
     </div>
   );
 }
+
