@@ -537,6 +537,27 @@ export async function fetchBooking(bookingId) {
   return res.data;
 }
 
+/** Fetch all bookings for the current user with participants */
+export async function fetchUserBookings() {
+  try {
+    console.log('[fetchUserBookings] Fetching user bookings from /user/me');
+    const res = await opentripAPI.get('/bookings/user/me');
+    console.log('[fetchUserBookings] Received bookings:', res?.data);
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (err) {
+    console.error('[fetchUserBookings] Error fetching user bookings:', err);
+    // Fallback to gateway
+    try {
+      const res2 = await api.get('/opentrip/bookings/user/me');
+      console.log('[fetchUserBookings] Received bookings from gateway:', res2?.data);
+      return Array.isArray(res2.data) ? res2.data : [];
+    } catch (err2) {
+      console.error('[fetchUserBookings] Gateway also failed:', err2);
+      throw err2;
+    }
+  }
+}
+
 /** Fetch all bookings for a specific trip_id */
 export async function fetchBookingsByTrip(tripId) {
   try {
@@ -654,6 +675,7 @@ export default {
   updateItinerary,
   fetchBookings,
   fetchBooking,
+  fetchUserBookings,
   createBooking,
   confirmBooking,
   cancelBooking,
