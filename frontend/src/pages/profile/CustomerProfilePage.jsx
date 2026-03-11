@@ -7,7 +7,7 @@ import Modal, { modalStyles } from '../../components/ui/Modal.jsx';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPen, faEye, faClock, faCheck, faCalendarDays, faTag, faMapMarkerAlt, faXmark, faDownload } from '@fortawesome/free-solid-svg-icons';
 import { fetchProfile, updateProfile } from '../../services/profileService';
-import { fetchLatestTripByEmail, fetchBookings, fetchPickupPoints } from '../../services/tripService';
+import { fetchLatestTripByEmail, fetchLatestBookedTrip, fetchUserBookings, fetchPickupPoints, fetchPlannerTripDetail } from '../../services/tripService';
 import countryList from 'react-select-country-list';
 import profileImage from '../../assets/images/jeki.jpg';
 import tripThumb1 from '../../assets/images/landingpage2.png';
@@ -88,82 +88,115 @@ export default function CustomerProfilePage() {
     loadProfile();
   }, []);
 
-  // Fetch latest trip from open-trip-system microservice (only for Customer role)
+  // Fetch all user bookings from open-trip-system microservice (only for Customer role)
   useEffect(() => {
     const token = localStorage.getItem('authToken');
-    // Avoid printing auth tokens to console. Log presence in dev only.
-    if (process.env.NODE_ENV === 'development') console.log('[CustomerProfilePage] useEffect loadLatestTrip - token present');
+    console.log('[CustomerProfilePage] useEffect loadAllBookings - token:', token?.substring(0, 50) + '...');
     if (!token) {
-      if (process.env.NODE_ENV === 'development') console.log('[CustomerProfilePage] No token found, skipping latest trip fetch');
+      console.log('[CustomerProfilePage] No token found, skipping bookings fetch');
       return;
     }
 
-    async function loadLatestTrip() {
+    async function loadAllBookings() {
       try {
-        if (process.env.NODE_ENV === 'development') console.log('[CustomerProfilePage] loadLatestTrip started');
+        console.log('[CustomerProfilePage] loadAllBookings started');
         // Reset error state
         setLatestTripError(null);
 
-        // Get user email and role from profile or localStorage
-        const userEmail = profileDetail?.email || localUser?.email;
+        // Get user role from profile or localStorage
         const userRole = profileDetail?.role || localUser?.role || localStorage.getItem('role');
 
-        if (process.env.NODE_ENV === 'development') console.log('[CustomerProfilePage] User email and role available');
-
-        if (!userEmail) {
-          if (process.env.NODE_ENV === 'development') console.log('[CustomerProfilePage] No user email available, skipping latest trip fetch');
-          return;
-        }
+        console.log('[CustomerProfilePage] User role:', userRole);
 
         // Role validation: only fetch for Customer role
         if (!userRole || userRole.toLowerCase() !== 'customer') {
-          if (process.env.NODE_ENV === 'development') console.log(`[CustomerProfilePage] User role is "${userRole}", not fetching latest trip (only for Customer role)`);
+          console.log(`[CustomerProfilePage] User role is "${userRole}", not fetching bookings (only for Customer role)`);
           setCustomerLatestTrips([]);
           return;
         }
 
-        if (process.env.NODE_ENV === 'development') console.log('[CustomerProfilePage] Calling fetchLatestTripByEmail...');
-        // Fetch latest trip from open-trip-system microservice
-        const latestTrip = await fetchLatestTripByEmail(userEmail, userRole);
+        console.log('[CustomerProfilePage] Calling fetchUserBookings...');
+        // Fetch ALL user bookings from database
+        const allBookings = await fetchUserBookings();
 
-        if (process.env.NODE_ENV === 'development') console.log('[CustomerProfilePage] fetchLatestTripByEmail returned (dev only)');
+        console.log('[CustomerProfilePage] fetchUserBookings returned:', allBookings);
 
-        if (latestTrip) {
-          const mappedTrip = {
-            id: latestTrip.trip_id,
-            trip_id: latestTrip.trip_id,
-            trip_name: latestTrip.trip_name,
-            title: latestTrip.trip_name, // for backward compatibility in UI
-            departure_date: latestTrip.departure_date,
-            date: latestTrip.departure_date, // for backward compatibility in UI
-            price: latestTrip.price ? `Rp ${latestTrip.price.toLocaleString('id-ID')}` : '',
-            destination_type: latestTrip.destination_type || '',
-            location: latestTrip.location || '',
-            status: latestTrip.status || 'Upcoming',
-            tag: latestTrip.destination_type || latestTrip.location || latestTrip.status || 'Upcoming',
-          };
+        if (allBookings && allBookings.length > 0) {
+          // For each booking, fetch trip details from travel_planner (rencanaperjalanan table)
+          const bookingsWithTripDetails = await Promise.all(
+            allBookings.map(async (booking) => {
+              try {
+                const tripId = booking.id_rencana || booking.trip_id;
+                console.log(`[CustomerProfilePage] Fetching trip details for trip_id: ${tripId}`);
+                
+                // Fetch trip details from travel_planner rencanaperjalanan table
+                const tripDetails = await fetchPlannerTripDetail(tripId);
+                console.log(`[CustomerProfilePage] Received trip details:`, tripDetails);
+                
+                // Merge booking and trip details
+                return {
+                  id: booking.booking_id, // Use booking_id as unique identifier
+                  booking_id: booking.booking_id,
+                  trip_id: tripId,
+                  trip_name: tripDetails.name || tripDetails.nama || 'Trip Name Not Available',
+                  title: tripDetails.name || tripDetails.nama || 'Trip Name Not Available',
+                  departure_date: tripDetails.startDate || booking.departure_date || booking.date,
+                  date: tripDetails.startDate || booking.departure_date || booking.date,
+                  price: tripDetails.price ? `Rp ${tripDetails.price.toLocaleString('id-ID')}` : (booking.total_price ? `Rp ${booking.total_price.toLocaleString('id-ID')}` : ''),
+                  destination_type: tripDetails.destinationType || tripDetails.destination_type || booking.destination_type || '',
+                  location: tripDetails.provinsi || tripDetails.location?.state || booking.location || '',
+                  duration: {
+                    days: tripDetails.jumlah_hari || tripDetails.duration?.days || 0,
+                    nights: tripDetails.jumlah_malam || tripDetails.duration?.nights || 0
+                  },
+                  status: booking.booking_status || booking.status || 'Upcoming',
+                  tag: tripDetails.destinationType || tripDetails.destination_type || booking.destination_type || booking.status || 'Upcoming',
+                  participant_count: booking.participant_count || 0,
+                  participants: booking.participants || [], // Store participants array from backend
+                  description: tripDetails.description || tripDetails.deskripsi || '',
+                  images: tripDetails.images || [],
+                  _tripDetails: tripDetails // Store full trip details for modal if needed
+                };
+              } catch (error) {
+                console.error(`[CustomerProfilePage] Error fetching trip details for booking ${booking.booking_id}:`, error);
+                // Return booking with fallback data if trip fetch fails
+                return {
+                  id: booking.booking_id,
+                  booking_id: booking.booking_id,
+                  trip_id: booking.id_rencana || booking.trip_id,
+                  trip_name: booking.trip_name || booking.title || 'Trip Details Unavailable',
+                  title: booking.trip_name || booking.title || 'Trip Details Unavailable',
+                  departure_date: booking.departure_date || booking.date,
+                  date: booking.departure_date || booking.date,
+                  price: booking.total_price ? `Rp ${booking.total_price.toLocaleString('id-ID')}` : '',
+                  destination_type: booking.destination_type || '',
+                  location: booking.location || '',
+                  status: booking.booking_status || booking.status || 'Upcoming',
+                  tag: booking.destination_type || booking.status || 'Upcoming',
+                  participant_count: booking.participant_count || 0,
+                  participants: booking.participants || [],
+                  duration: { days: 0, nights: 0 }
+                };
+              }
+            })
+          );
 
-          if (process.env.NODE_ENV === 'development') console.log('[CustomerProfilePage] Mapped trip (dev only)');
-          setCustomerLatestTrips([mappedTrip]);
-
-          // Don't pre-fill booking details with profile data
-          // Let openTripDetail fetch the real participant data from API
+          console.log('[CustomerProfilePage] Bookings with trip details:', bookingsWithTripDetails);
+          setCustomerLatestTrips(bookingsWithTripDetails);
         } else {
-          if (process.env.NODE_ENV === 'development') console.log('[CustomerProfilePage] No trip data returned, setting empty array');
-          // No trips found for this user
+          console.log('[CustomerProfilePage] No bookings returned, setting empty array');
           setCustomerLatestTrips([]);
         }
       } catch (error) {
-        // Log only the error message to avoid full payload exposure
-        console.error('[CustomerProfilePage] Failed to fetch latest trip:', error?.message || error);
-        setLatestTripError(error.message || 'Failed to load latest trip');
+        console.error('[CustomerProfilePage] Failed to fetch user bookings:', error);
+        setLatestTripError(error.message || 'Failed to load bookings');
         setCustomerLatestTrips([]);
       }
     }
 
     // Only load if we have profile data or user data
     if (profileDetail || localUser) {
-      loadLatestTrip();
+      loadAllBookings();
     }
   }, [profileDetail, localUser]);
 
@@ -258,139 +291,113 @@ export default function CustomerProfilePage() {
   }
   const isFormValid = validateEditableProfile(editableProfile).valid;
 
-  // Open Trip Detail Modal
-  const openTripDetail = async (trip) => {
-    setSelectedTrip(trip);
+  // Open Trip Detail Modal - using booking_id to match
+  const openTripDetail = async (bookingData) => {
+    setSelectedTrip(bookingData);
     
-    // Fetch booking details for this trip
+    // Use booking data that was already fetched (includes participants)
     try {
-      if (process.env.NODE_ENV === 'development') console.log('[DEBUG] Fetching bookings for trip (dev only)');
-      const bookings = await fetchBookings(trip.trip_id || trip.id || trip.tripId);
-      if (process.env.NODE_ENV === 'development') console.log('[DEBUG] Received bookings (dev only)');
-
-      // Fetch pickup points for this trip
-      if (process.env.NODE_ENV === 'development') console.log('[DEBUG] Fetching pickup points for trip (dev only)');
-      const pickupPoints = await fetchPickupPoints(trip.trip_id);
-      if (process.env.NODE_ENV === 'development') console.log('[DEBUG] Received pickup points (dev only)');
-
-      // Create a map of trip_pickup_id -> lokasi_jemput
-      const pickupMap = {};
-      pickupPoints.forEach(pp => {
-        if (pp.trip_pickup_id && pp.lokasi_jemput) {
-          pickupMap[pp.trip_pickup_id] = pp.lokasi_jemput;
-        }
-      });
-      if (process.env.NODE_ENV === 'development') console.log('[DEBUG] Pickup map keys (dev only):', Object.keys(pickupMap).length);
-
-      // Find booking for this trip using several possible booking shapes
-      const booking = bookings.find(b => {
-        if (process.env.NODE_ENV === 'development') console.log('[DEBUG] Checking booking candidate IDs against trip_id:', trip.trip_id);
-
-        const bookingTripCandidates = new Set();
-        if (b == null) return false;
-        if (b.trip_id) bookingTripCandidates.add(String(b.trip_id));
-        if (b.tripId) bookingTripCandidates.add(String(b.tripId));
-        if (b.booking_trip_id) bookingTripCandidates.add(String(b.booking_trip_id));
-        if (b.trip && typeof b.trip === 'string') bookingTripCandidates.add(String(b.trip));
-        if (b.trip && typeof b.trip === 'object') {
-          if (b.trip.trip_id) bookingTripCandidates.add(String(b.trip.trip_id));
-          if (b.trip.id) bookingTripCandidates.add(String(b.trip.id));
-        }
-
-        const tripIdsToCompare = new Set([
-          trip.trip_id,
-          trip.id,
-          trip.tripId,
-        ].filter(Boolean).map(String));
-
-        for (const tId of tripIdsToCompare) {
-          if (bookingTripCandidates.has(tId)) return true;
-        }
-
-        return false;
-      });
-
-      if (process.env.NODE_ENV === 'development') console.log('[DEBUG] Found booking id (dev only):', booking?.booking_id || booking?.id || booking?.bookingId);
-
-      if (booking) {
-        // Collect passengers from various payload shapes
-        let rawPassengers = [];
-        if (Array.isArray(booking.passengers) && booking.passengers.length) rawPassengers = booking.passengers;
-        else if (Array.isArray(booking.passenger) && booking.passenger.length) rawPassengers = booking.passenger;
-        else if (booking.passenger && typeof booking.passenger === 'object') rawPassengers = [booking.passenger];
-        else if (booking.participant && typeof booking.participant === 'object') rawPassengers = [booking.participant];
-
-        if (process.env.NODE_ENV === 'development') console.log('[DEBUG] Raw passengers before normalization (dev only) count:', rawPassengers.length);
-
-        // Helper to normalize a passenger object into UI-friendly keys
-        const normalizePassenger = (p) => {
-          // Try multiple field name variations for pickup point ID
-          const pickupId = p?.pick_up_point || p?.trip_pickup_id || p?.tripPickupId || 
-                          p?.pickup_id || p?.pickupId || p?.pickup_point || p?.pickupPoint || p?.pickup || '';
-          if (process.env.NODE_ENV === 'development') console.log('[DEBUG] Normalizing passenger (dev only):', { pickupId, name: p?.name || p?.customerName });
-          
-          // Get pickup label from map, fallback to ID if not found, then to '—' if empty
+      console.log('[DEBUG] Opening trip detail for booking:', bookingData);
+      
+      // Check if participants are already included in bookingData
+      if (bookingData.participants && bookingData.participants.length > 0) {
+        console.log('[DEBUG] Using participants from booking data:', bookingData.participants);
+        
+        // Fetch pickup points for this trip to map IDs to names
+        console.log('[DEBUG] Fetching pickup points for trip:', bookingData.trip_id);
+        const pickupPoints = await fetchPickupPoints(bookingData.trip_id);
+        console.log('[DEBUG] Received pickup points:', pickupPoints);
+        
+        // Create a map of trip_pickup_id -> lokasi_jemput
+        const pickupMap = {};
+        pickupPoints.forEach(pp => {
+          if (pp.trip_pickup_id && pp.lokasi_jemput) {
+            pickupMap[pp.trip_pickup_id] = pp.lokasi_jemput;
+          }
+        });
+        console.log('[DEBUG] Pickup map:', pickupMap);
+        
+        // Normalize participants data from backend
+        const normalizedPassengers = bookingData.participants.map(p => {
+          // Get pickup location name from map
           let pickupLabel = '—';
-          if (pickupId && pickupMap[pickupId]) {
-            pickupLabel = pickupMap[pickupId];
-          } else if (pickupId && pickupId.trim() !== '') {
-            pickupLabel = pickupId; // Show the UUID if not found in map
+          if (p.trip_pickup_id) {
+            pickupLabel = pickupMap[p.trip_pickup_id] || p.trip_pickup_id;
           }
           
-          if (process.env.NODE_ENV === 'development') console.log('[DEBUG] Final pickupLabel (dev only):', pickupLabel);
-          
           return {
-            customerName: p?.name || p?.customerName || p?.full_name || p?.first_name || '',
-            phoneNumber: p?.phone_number || p?.phone || p?.contact || '',
-            dateOfBirth: p?.date_of_birth || p?.dob || p?.birth_date || '',
-            gender: p?.gender || '',
-            nationality: p?.nationality || '',
+            customerName: `${p.first_name || ''} ${p.last_name || ''}`.trim() || '—',
+            phoneNumber: p.phone_number || '—',
+            dateOfBirth: p.date_of_birth || '—',
+            gender: p.gender || '—',
+            nationality: p.nationality || '—',
             pickupPoint: pickupLabel,
-            notes: p?.notes || ''
+            notes: p.notes || ''
           };
-        };
-
-        const normalizedPassengers = rawPassengers.map(normalizePassenger);
-
-        if (normalizedPassengers.length) {
-          if (process.env.NODE_ENV === 'development') console.log('[DEBUG] Setting booking details with', normalizedPassengers.length, 'passengers (dev only)');
-          const first = normalizedPassengers[0];
-          setTripBookingDetails(prev => ({
-            ...prev,
-            [trip.id]: {
-              bookingId: booking.booking_id || booking.id || booking.bookingId || null,
-              customerName: first.customerName,
-              phone: first.phoneNumber,
-              dateOfBirth: first.dateOfBirth,
-              gender: first.gender,
-              nationality: first.nationality,
-              pickupPoint: first.pickupPoint,
-              notes: first.notes || booking.notes || '',
-              passengers: normalizedPassengers
-            }
-          }));
-        } else {
-          console.warn('[CustomerProfilePage] Booking found but no passenger data present in booking payload');
-        }
+        });
+        
+        console.log('[DEBUG] Normalized passengers:', normalizedPassengers);
+        
+        // Store booking details with all passengers
+        const first = normalizedPassengers[0];
+        setTripBookingDetails(prev => ({
+          ...prev,
+          [bookingData.id]: {
+            bookingId: bookingData.booking_id,
+            customerName: first.customerName,
+            phone: first.phoneNumber,
+            dateOfBirth: first.dateOfBirth,
+            gender: first.gender,
+            nationality: first.nationality,
+            pickupPoint: first.pickupPoint,
+            notes: first.notes,
+            passengers: normalizedPassengers
+          }
+        }));
       } else {
-        console.warn('[CustomerProfilePage] No booking found or missing passenger data');
+        // No participants in this booking - set empty state with message
+        console.warn('[DEBUG] No participants found in booking:', bookingData.booking_id);
+        setTripBookingDetails(prev => ({
+          ...prev,
+          [bookingData.id]: {
+            bookingId: bookingData.booking_id,
+            customerName: 'No participant data',
+            phone: '—',
+            dateOfBirth: '—',
+            gender: '—',
+            nationality: '—',
+            pickupPoint: '—',
+            notes: 'No participants found for this booking. The booking may not have been completed or participants were not recorded.',
+            passengers: []
+          }
+        }));
       }
     } catch (error) {
-      console.error('[CustomerProfilePage] Failed to fetch booking details:', error?.message || error);
-      // More granular debug output in dev only (avoid printing response.data which may contain PII)
+      console.error('Failed to fetch booking details:', error);
       if (error?.response) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('[DEBUG] openTripDetail: response status', error.response.status);
-        }
-      } else if (error?.request) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('[DEBUG] openTripDetail: no response, request present (dev only)');
-        }
+        console.error('[DEBUG] openTripDetail: response status', error.response.status);
+        console.error('[DEBUG] openTripDetail: response data', error.response.data);
       } else {
         if (process.env.NODE_ENV === 'development') {
           console.error('[DEBUG] openTripDetail: message', error.message);
         }
       }
+      
+      // Set error state in booking details
+      setTripBookingDetails(prev => ({
+        ...prev,
+        [bookingData.id]: {
+          bookingId: bookingData.booking_id,
+          customerName: 'Error loading data',
+          phone: '—',
+          dateOfBirth: '—',
+          gender: '—',
+          nationality: '—',
+          pickupPoint: '—',
+          notes: `Failed to load booking details: ${error.message}`,
+          passengers: []
+        }
+      }));
     }
     
     setShowTripDetail(true);
@@ -586,51 +593,51 @@ export default function CustomerProfilePage() {
                   </div>
                 )}
 
-                {customerLatestTrips.map(trip => (
-                  <div key={trip.id} style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'rgba(245,241,232,0.9)', padding: 18, borderRadius: 12, border: `2px solid ${borderColor}` }}>
+                {customerLatestTrips.map((booking, index) => (
+                  <div key={booking.booking_id || `booking-${index}`} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(245,241,232,0.9)', padding: 18, borderRadius: 12, border: `2px solid ${borderColor}` }}>
                     <div style={{ width: 120, height: 80, borderRadius: 8, overflow: 'hidden', flex: '0 0 120px' }}>
-                      <img src={trip.id === 1 ? tripThumb1 : trip.id === 2 ? tripThumb2 : tripThumb3} alt="thumb" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      <img src={index % 3 === 0 ? tripThumb1 : index % 3 === 1 ? tripThumb2 : tripThumb3} alt="thumb" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                     </div>
 
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, color: colors.accent5, fontSize: 18 }}>{trip.title}</div>
-                          <div style={{ color: colors.accent5, marginTop: 6 }}>{trip.location}</div>
+                        <div >
+                          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, color: colors.accent5, fontSize: 18 }}>{booking.title}</div>
+                          <div style={{ color: colors.accent5, marginTop: 4 }}>{booking.location || booking.destination_type}</div>
                         </div>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                          <Button variant="btn1" onClick={() => openTripDetail(trip)} style={{ fontWeight: 500 }}>
+                          <Button variant="btn1" onClick={() => openTripDetail(booking)} style={{ fontWeight: 500 }}>
                             <FontAwesomeIcon icon={faEye} style={{ marginRight: 5 }} />
                             See Details
                           </Button>
-                          {trip.status === 'Upcoming' ? (
+                          {booking.status === 'Upcoming' ? (
                             <Button variant="btn3" style={{ fontWeight: 500 }}>
                               <FontAwesomeIcon icon={faClock} style={{ marginRight: 5 }} />
-                              {trip.status}
+                              {booking.status}
                             </Button>
                           ) : (
                             <Button variant="btn2" style={{fontWeight: 500 }}>
                               <FontAwesomeIcon icon={faCheck} style={{ marginRight: 5 }} />
-                              {trip.status}
+                              {booking.status}
                             </Button>
                           )}
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', gap: 18, marginTop: 12, alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: 12, marginTop: 8, alignItems: 'center' }}>
                         <div style={{ color: colors.accent5, display: 'flex', alignItems: 'center', gap: 8 }}>
                           <FontAwesomeIcon icon={faCalendarDays} style={{ color: colors.accent5 }} />
-                          <span>{trip.date}</span>
+                          <span>{booking.date}</span>
                         </div>
 
                         <div style={{ color: colors.accent5, display: 'flex', alignItems: 'center', gap: 8 }}>
                           <FontAwesomeIcon icon={faTag} style={{ color: colors.accent5 }} />
-                          <span>{trip.price}</span>
+                          <span>{booking.price}</span>
                         </div>
 
                         <div style={{ color: colors.accent5, display: 'flex', alignItems: 'center', gap: 8 }}>
                           <FontAwesomeIcon icon={faMapMarkerAlt} style={{ color: colors.accent5 }} />
-                          <span>{trip.destination_type}</span>
+                          <span>{booking.destination_type}</span>
                         </div>
                       </div>
                     </div>
