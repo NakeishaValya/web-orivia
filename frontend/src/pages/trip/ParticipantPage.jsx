@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faCircleUser, faDownload, faCheck, faXmark, faEdit } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faDownload, faCheck, faXmark, faEdit } from '@fortawesome/free-solid-svg-icons';
 import { spacing, fontFamily, colors, radius, fontSize } from '../../styles/variables.jsx';
 import Navbar, { TripTabs } from '../../components/ui/Navbar.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Modal from '../../components/ui/Modal.jsx';
-import extendAgentBg from '../../assets/images/extendagentbg.jpg';
-import { trips, tripSchedules, passengers } from '../../mocks/mockData';
 import { useLocation } from 'react-router-dom';
-import { fetchBookingsByTrip, fetchPlannerTripDetail } from '../../services/tripService';
+import { fetchBookingsByTrip, fetchPlannerTripDetail, confirmParticipant } from '../../services/tripService';
 
 
 export default function ParticipantPage() {
@@ -21,7 +19,7 @@ export default function ParticipantPage() {
   // State for API data
   const [loading, setLoading] = useState(!!qTripId);
   const [tripData, setTripData] = useState(null);
-  const [bookingsData, setBookingsData] = useState([]);
+  const [participantsData, setParticipantsData] = useState([]);
   
   // Fetch trip and bookings data from API
   useEffect(() => {
@@ -33,13 +31,13 @@ export default function ParticipantPage() {
     async function loadData() {
       try {
         setLoading(true);
-        // Fetch trip details and bookings in parallel
-        const [trip, bookings] = await Promise.all([
+        // Fetch trip details and participant rows in parallel
+        const [trip, participantRows] = await Promise.all([
           fetchPlannerTripDetail(qTripId),
           fetchBookingsByTrip(qTripId)
         ]);
         setTripData(trip);
-        setBookingsData(bookings);
+        setParticipantsData(Array.isArray(participantRows) ? participantRows : []);
       } catch (err) {
         console.error('Error loading trip/bookings:', err);
       } finally {
@@ -48,57 +46,57 @@ export default function ParticipantPage() {
     }
     
     loadData();
+    const intervalId = setInterval(loadData, 15000);
+    return () => clearInterval(intervalId);
   }, [qTripId]);
-  
-  const defaultSchedule = tripSchedules && tripSchedules.length ? (qScheduleId ? tripSchedules.find(s => String(s.scheduleId) === String(qScheduleId)) : tripSchedules[0]) : null;
-  const defaultTrip = defaultSchedule ? trips.find(t => t.tripId === defaultSchedule.tripId) : (trips && trips.length ? trips[0] : null);
-  
-  // Use tripData if available, otherwise fall back to mock data
-  const displayedTrip = tripData || defaultTrip;
-  
-  const schedules = displayedTrip && tripSchedules ? (
-    tripSchedules.filter(s => s.tripId === displayedTrip.tripId || s.tripId === displayedTrip.trip_id).map(s => ({ id: s.scheduleId, text: `${s.start_date || ''} - ${s.end_date || ''}` }))
-  ) : [];
-  const [selectedScheduleId, setSelectedScheduleId] = useState(schedules.length ? schedules[0].id : (defaultSchedule ? defaultSchedule.scheduleId : null));
-  const displayedSchedule = (selectedScheduleId != null) ? (tripSchedules.find(s => Number(s.scheduleId) === Number(selectedScheduleId)) || defaultSchedule) : defaultSchedule;
+
+  const displayedTrip = tripData;
+
+  const schedules = displayedTrip
+    ? [{ id: qScheduleId || displayedTrip.tripId || displayedTrip.trip_id || qTripId, text: `${displayedTrip.startDate || ''} - ${displayedTrip.endDate || ''}` }]
+    : [];
+  const [selectedScheduleId, setSelectedScheduleId] = useState(qScheduleId || null);
   
   // Get pickup points array for lookup
-  const pickupPointsArr = displayedTrip?.pickup_points || [];
+  const pickupPointsArr = displayedTrip?.pickup_points ?? [];
   
-  // Map bookings data to passenger format
-  // Use trip_pickup_id from booking to find the correct pickup point from trip_pickup_point table
-  const apiPassengers = bookingsData.map((booking, idx) => {
-    const p = booking.passenger || {};
-    
-    // Find pickup point using trip_pickup_id from booking
-    const pickupPoint = pickupPointsArr.find(pp => pp.id === booking.trip_pickup_id);
-    const pickupLocation = pickupPoint ? pickupPoint.location : (p.pick_up_point || '-');
-    
+  const pickupPointMap = pickupPointsArr.reduce((acc, pp) => {
+    if (pp?.id) {
+      acc[String(pp.id)] = pp;
+    }
+    return acc;
+  }, {});
+
+  // Map participants rows from open_trip_db participants table
+  const apiPassengers = participantsData.map((participant) => {
+    const pickupFromTrip = participant?.trip_pickup_id ? pickupPointMap[String(participant.trip_pickup_id)] : null;
+    const pickupLocation = participant?.pick_up_point || pickupFromTrip?.location || '';
     return {
-      username: `user${idx + 1}`,
-      fullname: p.name || 'Unknown',
-      gender: p.gender || '-',
-      dob: p.date_of_birth || null,
-      nationality: p.nationality || 'Indonesia',
+      booking_id: participant?.booking_id || '',
+      booking_status: participant?.booking_status || '',
+      username: participant?.participant_id ? String(participant.participant_id).slice(0, 8) : '',
+      fullname: `${participant?.first_name || ''} ${participant?.last_name || ''}`.trim(),
+      gender: participant?.gender || '',
+      dob: participant?.date_of_birth || null,
+      nationality: participant?.nationality || '',
       pickup: pickupLocation,
-      phone: p.phone_number || '-',
-      notes: p.notes || ''
+      phone: participant?.phone_number || '',
+      notes: participant?.notes || '',
+      pickupPrice: Number(pickupFromTrip?.price || 0) || 0,
+      participant_id: participant?.participant_id || '',
+      is_confirmed: Boolean(participant?.is_confirmed || false),
     };
   });
-  
-  // Use API passengers if available, else fall back to mock data
-  const passengerSample = apiPassengers.length > 0 ? apiPassengers : ((displayedSchedule && displayedSchedule.participants && displayedSchedule.participants.length) ? displayedSchedule.participants : (passengers || []));
+
+  const passengerSample = apiPassengers;
   const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
-  // computed participant / capacity values
-  // `totalParticipants` should represent trip capacity (`pax` or `slot`),
-  // while `confirmedCount` is the number of participants on the selected schedule.
-  const totalParticipants = displayedTrip?.pax || displayedTrip?.slot || '-';
-  const confirmedCount = passengerSample.length;
-  const capacity = displayedTrip?.pax || displayedTrip?.slot || '-';
-  const availableSlots = (typeof (displayedTrip?.pax || displayedTrip?.slot) === 'number')
-    ? Math.max((displayedTrip.pax || displayedTrip.slot) - confirmedCount, 0)
-    : '-';
+  // Computed participant and capacity values from API data.
+  const totalParticipants = passengerSample.length;
+  const confirmedParticipants = passengerSample.filter((p) => Boolean(p.is_confirmed));
+  const confirmedCountComputed = confirmedParticipants.length;
+  const capacity = typeof displayedTrip?.slot === 'number' ? displayedTrip.slot : (typeof displayedTrip?.pax === 'number' ? displayedTrip.pax : undefined);
+  const availableSlots = (typeof capacity === 'number') ? Math.max(capacity - totalParticipants, 0) : undefined;
 
   // pickup summary computed from trip pickup_points (from trip_pickup_point table in database)
   const normalize = (s) => String(s || '').trim();
@@ -115,17 +113,17 @@ export default function ParticipantPage() {
   // Build summary using ONLY official pickup points from trip_pickup_point table
   const pickupSummary = pickupPointsArr.map(pp => {
     const key = normalize(pp.location);
+    const parsedPrice = Number(pp.price || 0);
     return {
-      loc: pp.location,
+      loc: pp.location || '',
       count: pickupCountsMap[key] || 0,
-      price: pp.price ?? 0
+      price: Number.isFinite(parsedPrice) ? parsedPrice : 0
     };
   });
 
-  const totalPickupRevenue = pickupSummary.reduce((sum, p) => sum + (p.count * (p.price || 0)), 0);
-  const tripPrice = displayedTrip?.price || displayedTrip?.harga || 0;
-  const totalTripRevenue = confirmedCount * tripPrice;
-  const totalRevenue = totalTripRevenue + totalPickupRevenue;
+  const tripPrice = typeof displayedTrip?.price === 'number' ? displayedTrip.price : (typeof displayedTrip?.harga === 'number' ? displayedTrip.harga : undefined);
+  const totalTripRevenue = (typeof tripPrice === 'number') ? tripPrice * totalParticipants : undefined;
+  const totalRevenue = (typeof totalTripRevenue === 'number') ? totalTripRevenue : undefined;
 
   const formatIDR = (v) => {
     if (typeof v !== 'number') return '-';
@@ -149,7 +147,6 @@ export default function ParticipantPage() {
   };
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPassenger, setSelectedPassenger] = useState(null);
-  const [selectedDay, setSelectedDay] = useState(1);
 
   const openPassengerModal = (p) => {
     setSelectedPassenger(p);
@@ -159,6 +156,28 @@ export default function ParticipantPage() {
   const closePassengerModal = () => {
     setSelectedPassenger(null);
     setModalOpen(false);
+  };
+
+  const handleConfirmSelectedPassenger = async () => {
+    if (!selectedPassenger?.participant_id || selectedPassenger?.is_confirmed) return;
+
+    try {
+      await confirmParticipant(selectedPassenger.participant_id);
+
+      setParticipantsData((prev) => prev.map((row) => {
+        if (String(row?.participant_id) === String(selectedPassenger.participant_id)) {
+          return { ...row, is_confirmed: true };
+        }
+        return row;
+      }));
+
+      setSelectedPassenger((prev) => {
+        if (!prev) return prev;
+        return { ...prev, is_confirmed: true };
+      });
+    } catch (err) {
+      console.error('Failed to confirm participant:', err);
+    }
   };
 
   const calculateAge = (dobStr) => {
@@ -272,36 +291,60 @@ export default function ParticipantPage() {
         <TripTabs />
 
         <div style={header}>
-          <div style={headerLeft}>
-            <img src={displayedTrip?.image || (displayedTrip?.images && displayedTrip.images[0]) || '/src/assets/images/tripexplorebg.png'} alt="trip" style={thumb} />
-            <div style={titleBlock}>
-              <h2 style={{ margin: 0, color: '#2b2b2b' }}>{displayedTrip?.trip_name || displayedTrip?.nama || displayedTrip?.name || '—'}</h2>
-              <div style={subtitle}>
-                {(typeof displayedTrip?.location === 'string' ? displayedTrip.location : displayedTrip?.location?.state) || displayedTrip?.provinsi || ''}
-                {(displayedTrip?.duration?.days || displayedTrip?.jumlah_hari || displayedTrip?.duration?.nights || displayedTrip?.jumlah_malam || displayedTrip?.destination_type || displayedTrip?.type || displayedTrip?.destinationType) ? ' · ' : ''}
-                {displayedTrip?.duration?.days || displayedTrip?.jumlah_hari ? `${displayedTrip.duration?.days || displayedTrip.jumlah_hari}D` : ''}
-                {displayedTrip?.duration?.nights || displayedTrip?.jumlah_malam ? `${displayedTrip.duration?.nights || displayedTrip.jumlah_malam}N` : ''}
-                {displayedTrip?.destination_type || displayedTrip?.type || displayedTrip?.destinationType ? ` · ${displayedTrip.destination_type || displayedTrip.type || displayedTrip.destinationType}` : ''}
+          {loading ? (
+            <>
+              <div style={headerLeft}>
+                <div style={{ ...thumb, backgroundColor: '#eee' }} />
+                <div style={titleBlock}>
+                  <div style={{ height: 22, width: 220, background: '#eee', borderRadius: 6 }} />
+                  <div style={{ height: 14, width: 160, background: '#eee', borderRadius: 6, marginTop: spacing.sm }} />
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, paddingTop: spacing.sm }}>
-                {schedules.length > 0 && (
-                  <select
-                    value={selectedScheduleId || ''}
-                    onChange={(e) => setSelectedScheduleId(Number(e.target.value))}
-                    style={{ padding: `${spacing.xs} ${spacing.sm}`, borderRadius: radius.sm, border: `1px solid ${colors.accent5}20`, backgroundColor: colors.accent1, cursor: 'pointer' }}
-                  >
-                    {schedules.map(s => (
-                      <option key={s.id} value={s.id}>{formatDateRange(s.text)}</option>
-                    ))}
-                  </select>
+              <div style={slotBox}>
+                <div style={{ height: 18, width: 120, background: '#eee', borderRadius: 6 }} />
+                <div style={{ height: 28, width: 80, background: '#eee', borderRadius: 6, marginTop: spacing.sm }} />
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={headerLeft}>
+                {displayedTrip && (displayedTrip.image || (displayedTrip.images && displayedTrip.images[0])) ? (
+                  <img src={displayedTrip.image || (displayedTrip.images && displayedTrip.images[0])} alt="trip" style={thumb} />
+                ) : null}
+                <div style={titleBlock}>
+                  <h2 style={{ margin: 0, color: '#2b2b2b' }}>{displayedTrip ? (displayedTrip.trip_name || displayedTrip.nama || displayedTrip.name || '') : ''}</h2>
+                  <div style={subtitle}>
+                    {displayedTrip ? ((typeof displayedTrip.location === 'string' ? displayedTrip.location : displayedTrip?.location?.state) || displayedTrip?.provinsi || '') : ''}
+                    {displayedTrip && (displayedTrip?.duration?.days || displayedTrip?.jumlah_hari || displayedTrip?.duration?.nights || displayedTrip?.jumlah_malam || displayedTrip?.destination_type || displayedTrip?.type || displayedTrip?.destinationType) ? ' · ' : ''}
+                    {displayedTrip ? (displayedTrip?.duration?.days || displayedTrip?.jumlah_hari ? `${displayedTrip.duration?.days || displayedTrip.jumlah_hari}D` : '') : ''}
+                    {displayedTrip ? (displayedTrip?.duration?.nights || displayedTrip?.jumlah_malam ? `${displayedTrip.duration?.nights || displayedTrip.jumlah_malam}N` : '') : ''}
+                    {displayedTrip ? (displayedTrip?.destination_type || displayedTrip?.type || displayedTrip?.destinationType ? ` · ${displayedTrip.destination_type || displayedTrip.type || displayedTrip.destinationType}` : '') : ''}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, paddingTop: spacing.sm }}>
+                    {schedules.length > 0 && (
+                      <select
+                        value={selectedScheduleId || ''}
+                        onChange={(e) => setSelectedScheduleId(e.target.value)}
+                        style={{ padding: `${spacing.xs} ${spacing.sm}`, borderRadius: radius.sm, border: `1px solid ${colors.accent5}20`, backgroundColor: colors.accent1, cursor: 'pointer' }}
+                      >
+                        {schedules.map(s => (
+                          <option key={s.id} value={s.id}>{formatDateRange(s.text)}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div style={slotBox}>
+                {typeof capacity === 'number' && (
+                  <>
+                    <div style={{ color: '#7a6a45', fontWeight: 600 }}>Available Slot</div>
+                    <div style={slotBig}>{availableSlots} / {capacity}</div>
+                  </>
                 )}
               </div>
-            </div>
-          </div>
-          <div style={slotBox}>
-            <div style={{ color: '#7a6a45', fontWeight: 600 }}>Available Slot</div>
-            <div style={slotBig}>{availableSlots} / {displayedTrip?.pax || displayedTrip?.slot || '-'}</div>
-          </div>
+            </>
+          )}
         </div>
         <Modal open={modalOpen} onClose={closePassengerModal} title={''}>
           {selectedPassenger && (
@@ -352,8 +395,13 @@ export default function ParticipantPage() {
                   <Button variant="btn1" style={{ display: 'inline-flex', gap: spacing.xs }}>
                     <FontAwesomeIcon icon={faEdit} /> Edit
                   </Button>
-                  <Button variant="btn2" style={{ display: 'inline-flex', gap: spacing.xs }}>
-                    <FontAwesomeIcon icon={faCheck} /> Confirm
+                  <Button
+                    variant={selectedPassenger?.is_confirmed ? 'btn1' : 'btn2'}
+                    style={{ display: 'inline-flex', gap: spacing.xs }}
+                    onClick={handleConfirmSelectedPassenger}
+                    disabled={selectedPassenger?.is_confirmed}
+                  >
+                    <FontAwesomeIcon icon={faCheck} /> {selectedPassenger?.is_confirmed ? 'Confirmed' : 'Confirm'}
                   </Button>
                   <Button variant="btn3" onClick={closePassengerModal} style={{ display: 'inline-flex', gap: spacing.xs }}>
                     <FontAwesomeIcon icon={faXmark} /> Cancel
@@ -372,26 +420,24 @@ export default function ParticipantPage() {
                   <h3 style={{ marginTop: 0, marginBottom: spacing.sm }}>Participant Summary</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
                       <div>Total Participant : {totalParticipants}</div>
-                      <div>Confirmed : {confirmedCount}</div>
-                      <div>Available Slots : {availableSlots}</div>
+                      <div>Confirmed : {confirmedCountComputed}</div>
+                      {typeof capacity === 'number' && <div>Available Slots : {availableSlots}</div>}
                     </div>
                 </div>
 
                 <div style={smallCard}>
                   <h3 style={{ marginTop: 0, marginBottom: spacing.sm }}>Pick Up Point Summary</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xs }}>
-                      {pickupSummary.map(p => (
-                        <div key={p.loc}>{p.loc} : {p.count}</div>
-                      ))}
-                    </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xs }}>
+                          {displayedTrip && pickupSummary.length > 0 ? pickupSummary.map(p => (
+                            <div key={p.loc}>{p.loc} : {p.count}</div>
+                          )) : <div style={{ color: '#999' }}>Pickup summary unavailable</div>}
+                        </div>
                 </div>
 
                 <div style={smallCard}>
                   <h3 style={{ marginTop: 0, marginBottom: spacing.sm }}>Financial Summary</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xs }}>
-                    <div>Total Trip Revenue : {formatIDR(totalTripRevenue)}</div>
-                    <div>Total Pickup Revenue : {formatIDR(totalPickupRevenue)}</div>
-                    <div>Total Revenue : {formatIDR(totalRevenue)}</div>
+                    {typeof totalTripRevenue === 'number' && <div>Total Trip Revenue : {formatIDR(totalTripRevenue)}</div>}
                   </div>
                 </div>
               </div>
@@ -426,21 +472,35 @@ export default function ParticipantPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {passengerSample.map((p, idx) => (
-                      <tr key={idx} style={{ borderBottom: `1px solid ${colors.accent5}11` }}>
-                        <td style={{ padding: spacing.sm }}>{p.username}</td>
-                        <td style={{ padding: spacing.sm }}>{p.fullname}</td>
-                        <td style={{ padding: spacing.sm }}>{p.gender}</td>
-                        <td style={{ padding: spacing.sm }}>{calculateAge(p.dob)} yrs</td>
-                        <td style={{ padding: spacing.sm }}>{p.pickup}</td>
-                        <td style={{ padding: spacing.sm }}>{p.phone}</td>
-                        <td style={{ padding: spacing.sm, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <button onClick={() => openPassengerModal(p)} style={{ background: 'transparent', border: 'none', color: colors.accent5, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} title="View">
-                            <FontAwesomeIcon icon={faEye} />
-                          </button>
+                    {loading ? (
+                      <tr>
+                        <td colSpan={7} style={{ padding: spacing.lg, textAlign: 'center', color: colors.accent5, fontWeight: 600 }}>
+                          Loading participants...
                         </td>
                       </tr>
-                    ))}
+                    ) : passengerSample.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} style={{ padding: spacing.lg, textAlign: 'center', color: colors.accent5, fontWeight: 600 }}>
+                          No Participant Joined
+                        </td>
+                      </tr>
+                    ) : (
+                      passengerSample.map((p, idx) => (
+                        <tr key={idx} style={{ borderBottom: `1px solid ${colors.accent5}11` }}>
+                          <td style={{ padding: spacing.sm }}>{p.username}</td>
+                          <td style={{ padding: spacing.sm }}>{p.fullname}</td>
+                          <td style={{ padding: spacing.sm }}>{p.gender}</td>
+                          <td style={{ padding: spacing.sm }}>{p.dob ? `${calculateAge(p.dob)} yrs` : ''}</td>
+                          <td style={{ padding: spacing.sm }}>{p.pickup}</td>
+                          <td style={{ padding: spacing.sm }}>{p.phone}</td>
+                          <td style={{ padding: spacing.sm, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <button onClick={() => openPassengerModal(p)} style={{ background: 'transparent', border: 'none', color: colors.accent5, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} title="View">
+                              <FontAwesomeIcon icon={faEye} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

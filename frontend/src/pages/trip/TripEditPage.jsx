@@ -940,7 +940,6 @@ export default function TripEditPage() {
                         style={{ width: 16, height: 16, cursor: 'pointer' }}
                       />
                       <span style={{ fontSize: fontSize.sm }}>
-                        <span style={{ color: colors.accent3, fontWeight: 600 }}>[Rp {formatRupiah(point.price)}]</span>{' '}
                         {point.location}
                       </span>
                     </label>
@@ -1354,15 +1353,6 @@ export default function TripEditPage() {
             type="text"
             value={newPickupLocation}
             onChange={(e) => { setNewPickupLocation(e.target.value); setPickupError(''); }}
-            style={modalStyles.input}
-          />
-        </div>
-        <div style={modalStyles.formGroup}>
-          <label style={modalStyles.label}>Price</label>
-          <input
-            type="text"
-            value={newPickupPrice}
-            onChange={(e) => { setNewPickupPrice(e.target.value); setPickupError(''); }}
             style={modalStyles.input}
           />
         </div>

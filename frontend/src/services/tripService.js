@@ -243,6 +243,11 @@ export async function fetchPlannerTripDetail(tripId) {
   }
 }
 
+export async function confirmParticipant(participantId) {
+  const res = await api.post(`/opentrip/bookings/participants/${participantId}/confirm`);
+  return res.data;
+}
+
 /** Fetch a single trip by ID (public, via gateway) */
 export async function fetchTrip(tripId) {
   const res = await api.get(`/opentrip/trips/${tripId}`);
@@ -513,8 +518,13 @@ export async function fetchUserBookings() {
 /** Fetch all bookings for a specific trip_id */
 export async function fetchBookingsByTrip(tripId) {
   try {
-    const res = await api.get(`/opentrip/bookings/by_trip/${tripId}`);
-    return Array.isArray(res.data) ? res.data : [];
+    try {
+      const res = await opentripAPI.get(`/bookings/by_trip/${tripId}`);
+      return Array.isArray(res.data) ? res.data : [];
+    } catch (e) {
+      const res = await api.get(`/opentrip/bookings/by_trip/${tripId}`);
+      return Array.isArray(res.data) ? res.data : [];
+    }
   } catch (err) {
     console.error('[fetchBookingsByTrip] Error fetching bookings:', err);
     return [];
