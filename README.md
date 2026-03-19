@@ -165,6 +165,24 @@ uv run python manage.py migrate
 uv run python manage.py runserver
 ```
 
+**Running Redis for Caching**
+
+The gateway uses Redis for caching to improve performance. You can run Redis locally using Docker.
+
+```powershell
+# From the orivia/backend directory
+docker compose -f redis-docker-compose.yml up -d
+```
+
+Ensure your `orivia/backend/.env` file is configured to connect to Redis:
+
+```env
+# Redis Cache Configuration
+REDIS_LOCATION=redis://127.0.0.1:6379/1
+```
+
+You can view the Redis instance using Redis Insight, which will be available at `http://localhost:5540`.
+
 ### 4. Frontend (React)
 
 Finally, set up and run the user interface
@@ -194,15 +212,33 @@ VITE_GOOGLE_CLIENT_ID=your-google-client-id
 npm run dev
 ```
 
-You can now access the Orivia application at `http://127.0.0.1:5173`.
+You can now access the Orivia application at `http://127.0.0.1:5173`
 
 ## Contributors
 <p align="center">
   <table>
     <tbody>
       <tr>
-        <td align="center" valign="top" width="14.28%"><a href="https://github.com/dzakyatha"><img src="https://avatars.githubusercontent.com/u/164707111?v=4?s=100" width="100px;" alt="dzakyatha"/><br /><sub><b>dzakyatha</b></sub><br /></a><br />   </td>
-        <td align="center" valign="top" width="14.28%"><a href="https://github.com/NakeishaValya"><img src="https://avatars.githubusercontent.com/u/167664928?v=4?s=100" width="100px;" alt="NakeishaValya"/><br /><sub><b>NakeishaValya</b></sub><br /></a><br /> </td>
+        <td align="center" width="50%" valign="middle">
+          <a href="https://github.com/dzakyatha">
+            <img src="https://avatars.githubusercontent.com/u/164707111?v=4?s=100"
+                 width="100"
+                 style="border-radius:50%; object-fit:cover;" 
+                 alt="dzakyatha"/>
+            <br />
+            <sub><b>dzakyatha</b></sub>
+          </a>
+        </td>
+        <td align="center" width="50%" valign="middle">
+          <a href="https://github.com/NakeishaValya">
+            <img src="https://avatars.githubusercontent.com/u/167664928?v=4?s=100"
+                 width="100"
+                 style="border-radius:50%; object-fit:cover;" 
+                 alt="NakeishaValya"/>
+            <br />
+            <sub><b>NakeishaValya</b></sub>
+          </a>
+        </td>
       </tr>
     </tbody>
   </table>
